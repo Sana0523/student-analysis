@@ -5,10 +5,11 @@ import { useRouter } from "next/navigation";
 export default function Home() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
 
-  const handleSubmit = (e) => {
+  const handleSubmit =async (e) => {
     e.preventDefault();
     setError("");
 
@@ -16,12 +17,32 @@ export default function Home() {
       setError("Please enter both email and password.");
       return;
     }
-    const userType = email.includes('teacher') ? 'teacher' : 'student';
-    localStorage.setItem('userType', userType);
-    if (userType === 'teacher') {
-      router.push('/teacher_dashboard');
-    } else {
-      router.push('/student_dashboard');
+    setLoading(true);
+    try{
+      const response = await fetch('/api/auth/login',{
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body : JSON.stringify({ email, password })
+    });
+    const data= await response.json();
+    if(data.success) {
+      if(data.user.role=== 'teacher') {
+        router.push('/teacher_dashboard');
+      } else if(data.user.role === 'student') {
+        router.push('/student_dashboard');
+      }
+      else{
+        setError("Invalid user role.");
+      }
+    }
+    else {
+      setError(data.message || "Login failed. Please try again.");
+    }
+    setLoading(false);
+    } catch (error) {
+      console.error("Error during login:", error);
+      setError("An unexpected error occurred. Please try again later.");
+      return;
     }
   };
   return (
