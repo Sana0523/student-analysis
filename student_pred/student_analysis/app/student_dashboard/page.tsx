@@ -5,7 +5,15 @@ import { useState, useEffect} from "react";
 
 
 const StudentDashboard = () => {
-  const[studentData, setStudentData] = useState(null);
+  type Student = {
+    name: string;
+    email: string;
+    age: number;
+    study_hours: number;
+    date : string;
+  };
+  
+  const[studentData, setStudentData] = useState<Student | null>(null);
   const[grades, setGrades] = useState([]);
   const[prediction, setprediction] = useState([null]);
   const[loading, setLoading] = useState(true);
