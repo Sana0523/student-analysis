@@ -41,7 +41,7 @@ const TeacherDashboard = () => {
       setLoading(true);
       const [studentsResponse, gradesResponse, predictionsResponse] = await Promise.all(
         [
-          fetch('/api/students'),
+          fetch('/api/student'),
           fetch('/api/grades'),
           fetch('/api/predictions')
         ]
