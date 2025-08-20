@@ -1,41 +1,67 @@
 "use client";
 import Image from "next/image";
-import { useRouter } from 'next/navigation';
+// import { useRouter } from 'next/navigation';
 import { useState, useEffect} from "react";
 
+type Student = {
+  id: string;
+  name: string;
+  email: string;
+  age: number;
+  study_hours: number;
+  date: string;
+};
 
+type Grade = {
+  subject: string;
+  score: number;
+  grade: string;
+  date: string;
+};
+
+type Prediction = {
+  predicted_grade: string;
+  prediction: string;
+  confidence: number;
+};
 const StudentDashboard = () => {
-  type Student = {
-    name: string;
-    email: string;
-    age: number;
-    study_hours: number;
-    date : string;
-  };
   
   const[studentData, setStudentData] = useState<Student | null>(null);
   const[grades, setGrades] = useState([]);
   const[prediction, setprediction] = useState([null]);
   const[loading, setLoading] = useState(true);
   const[error, setError] = useState("");
-  const router = useRouter();
+  // const router = useRouter();
 
   // Temporary studentId
   const studentId='st1';
 
   useEffect(() => {
-    fetchStudentData();
+    const token= localStorage.getItem('token');
+    if(!token) {
+      window.location.href = '/';
+      return;
+    }
+    fetchStudentData(token);
   },[]);
-  const fetchStudentData =async () => {
+  const fetchStudentData =async ( token:string) => {
     try {
+
       setLoading(true);
+      setError("");
+      const authHeaders = {
+        'Authorization': 'Bearer ${token'
+      };
       const [studentResponse, gradesResponse, predictionResponse] = await Promise.all(
         [
-          fetch(`/api/students/${studentId}`),
-          fetch(`/api/grades/student/${studentId}`),
-          fetch(`/api/predictions/student/${studentId}`)
+          fetch(`/api/students/${studentId}` ,{ headers: authHeaders }),
+          fetch(`/api/grades/student/${studentId}` , { headers: authHeaders }),
+          fetch(`/api/predictions/student/${studentId}`, { headers: authHeaders })
         ]
       );
+      if (!studentResponse.ok || !gradesResponse.ok || !predictionResponse.ok) {
+          throw new Error("Failed to fetch dashboard data. Your session may have expired.");
+      }
       const studentData= await studentResponse.json();
       const gradesData = await gradesResponse.json();
       const predictionData = await predictionResponse.json();
@@ -61,7 +87,7 @@ const StudentDashboard = () => {
   };
   const handleLogout = () => {
     localStorage.removeItem('token');
-    router.push('/');
+    window.location.href = '/';
   }; 
   if (loading) {
     return (
