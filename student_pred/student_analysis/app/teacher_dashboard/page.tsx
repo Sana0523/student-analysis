@@ -1,12 +1,13 @@
 "use client";
+import { headers } from "next/headers";
 import Image from "next/image";
-import { useRouter } from 'next/navigation';
+// import { useRouter } from 'next/navigation';
 import { useState, useEffect} from 'react';
 
 type Student = {
   name: string;
   id:string;
-  risklevel: string;
+  risk_level: string;
   last_activity: string;
 };
 type Grade = {
@@ -15,12 +16,12 @@ type Grade = {
 };
 type Prediction = {
   studentId: string;
-  risklevel: string;
+  risk_level: string;
 };
 
 type Stats = {
   totalStudents: number;
-  classAverge: number;
+  classAverage: number;
   atRiskCount: number;
   recentActivity: number;
 };
@@ -33,20 +34,32 @@ const TeacherDashboard = () => {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    fetchAllData();
+    const token = localStorage.getItem('token');
+    if(!token)
+    {
+      window.location.href = '/';
+      return;
+    }
+    fetchAllData(token);
   }, []);
 
-  const fetchAllData = async () => {
+  const fetchAllData = async (token:string) => {
     try {
       setLoading(true);
+      setError("");
+      const authHeaders={
+        'Authorization': `Bearer ${token}`
+      };
       const [studentsResponse, gradesResponse, predictionsResponse] = await Promise.all(
         [
-          fetch('/api/student'),
-          fetch('/api/grades'),
-          fetch('/api/predictions')
+          fetch('/api/student' ,{ headers: authHeaders}),
+          fetch('/api/grades', {headers: authHeaders}),
+          fetch('/api/predictions',{headers: authHeaders})
         ]
       );
-
+      if (!studentsResponse.ok || !gradesResponse.ok || !predictionsResponse.ok) {
+          throw new Error("Failed to fetch dashboard data. Your session may have expired.");
+      }
       const studentsData = await studentsResponse.json();
       const gradesData = await gradesResponse.json();
       const predictionData = await predictionsResponse.json();

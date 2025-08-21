@@ -50,7 +50,7 @@ const StudentDashboard = () => {
       setLoading(true);
       setError("");
       const authHeaders = {
-        'Authorization': 'Bearer ${token'
+        'Authorization': 'Bearer ${token}'
       };
       const [studentResponse, gradesResponse, predictionResponse] = await Promise.all(
         [
