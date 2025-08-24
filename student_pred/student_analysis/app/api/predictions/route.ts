@@ -18,13 +18,13 @@ export async function POST(request:Request) {
             return NextResponse.json({  message: 'Unauthorized' }, { status: 401 });
       }
       try{
-            const body=request.json();
+            const body=await request.json();
             const { studentData,max_Marks } = body;
              const options = {
-                  mode='json',
+                  mode:'json',
                   pythonOptions: ['-u'],
                   scriptPath: './',
-                  args: [JSON.stringify(studentData), max_marks.toString()]
+                  args: [JSON.stringify(studentData), max_Marks.toString()]
              };
              const results= await PythonShell.run('predict_script.py',options);
              const predictionresult=results[0];
