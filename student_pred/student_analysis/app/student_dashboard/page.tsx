@@ -10,6 +10,8 @@ type Student = {
   age: number;
   study_hours: number;
   date: string;
+  failures: number;
+  absences: number;
 };
 
 type Grade = {
@@ -22,13 +24,14 @@ type Grade = {
 type Prediction = {
   predicted_grade: string;
   prediction: string;
-  confidence: number;
+  risk_level: string;
 };
+
 const StudentDashboard = () => {
   
   const[studentData, setStudentData] = useState<Student | null>(null);
-  const[grades, setGrades] = useState([]);
-  const[prediction, setprediction] = useState([null]);
+  const[grades, setGrades] = useState<Grade[]>([]);
+  const[prediction, setPrediction] = useState<Prediction | null>(null);
   const[loading, setLoading] = useState(true);
   const[error, setError] = useState("");
   // const router = useRouter();
@@ -44,51 +47,87 @@ const StudentDashboard = () => {
     }
     fetchStudentData(token);
   },[]);
-  const fetchStudentData =async ( token:string) => {
-    try {
 
+  const fetchStudentData = async (token: string) => {
+    try {
       setLoading(true);
       setError("");
+      
       const authHeaders = {
-        'Authorization': 'Bearer ${token}'
+        'Authorization': `Bearer ${token}` 
       };
-      const [studentResponse, gradesResponse, predictionResponse] = await Promise.all(
-        [
-          fetch(`/api/students/${studentId}` ,{ headers: authHeaders }),
-          fetch(`/api/grades/student/${studentId}` , { headers: authHeaders }),
-          fetch(`/api/predictions/student/${studentId}`, { headers: authHeaders })
-        ]
-      );
-      if (!studentResponse.ok || !gradesResponse.ok || !predictionResponse.ok) {
-          throw new Error("Failed to fetch dashboard data. Your session may have expired.");
+
+      
+      const [studentResponse, gradesResponse] = await Promise.all([
+        fetch(`/api/students/${studentId}`, { headers: authHeaders }),
+        fetch(`/api/grades/student/${studentId}`, { headers: authHeaders }),
+        // We'll handle the prediction call separately since it depends on the other data
+      ]);
+
+      if (!studentResponse.ok || !gradesResponse.ok) {
+        throw new Error("Failed to fetch dashboard data. Your session may have expired.");
       }
-      const studentData= await studentResponse.json();
+
+      const studentData = await studentResponse.json();
       const gradesData = await gradesResponse.json();
-      const predictionData = await predictionResponse.json();
-      if(studentData.success)
-      {
+
+      if (studentData.success) {
         setStudentData(studentData.student);
       }
-      if(gradesData.success)
-      {
+      if (gradesData.success) {
         setGrades(gradesData.grades);
       }
-      if(predictionData.success)
-      {
-        setprediction(predictionData.predictions[0]);
+
+      // Handle prediction call separately with proper error handling
+      try {
+        const requiredFeatures = {
+          age: studentData.student.age,
+          failures: studentData.student.failures,
+          studytime: studentData.student.study_hours,
+          absences: studentData.student.absences,
+          G1: gradesData.grades[0]?.score || 0, // Added null check
+          G2: gradesData.grades[1]?.score || 0  // Added null check
+        };
+
+        // Dynamic as of now
+        const maxMarks = 100;
+        
+        const predictionApiResponse = await fetch('/api/predictions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}` // Fixed: Using template literals with backticks
+          },
+          body: JSON.stringify({ studentData: requiredFeatures, max_marks: maxMarks })
+        });
+
+        if (!predictionApiResponse.ok) {
+          throw new Error("Failed to fetch prediction data. Please try again later.");
+        }
+
+        const predictionData = await predictionApiResponse.json();
+        if (predictionData.success) {
+          setPrediction(predictionData.prediction); // Single object, not array
+        }
+      } catch (predictionError) {
+        console.error("Error fetching prediction data:", predictionError);
+        // Set a default prediction or show a warning, but don't fail the entire dashboard
+        setPrediction({ predicted_grade: 'N/A', prediction: 'Unable to calculate', risk_level: 'unknown' });
       }
-    }
-    catch(error) {
+
+    } catch (error) {
       console.error("Error fetching student data:", error);
       setError("An error occurred while fetching student data.");
     } finally {
       setLoading(false);
     }
   };
+
   const handleLogout = () => {
     localStorage.removeItem('token');
     window.location.href = '/';
   }; 
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-black">
@@ -120,7 +159,7 @@ const StudentDashboard = () => {
             <div className="text-red-400 text-xl mb-4">⚠️ Error</div>
             <p className="text-white mb-6">{error}</p>
             <button
-              onClick={fetchStudentData}
+              onClick={() => fetchStudentData(localStorage.getItem('token') || '')}
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-all duration-200"
             >
               Try Again
@@ -196,10 +235,10 @@ const StudentDashboard = () => {
             <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
               🎯 Performance Prediction
             </h3>
-            {prediction ? (
+            {prediction && prediction[0] ? (
               <div className="text-center">
                 <div className="text-3xl font-bold text-blue-400 mb-2">
-                  {prediction.predicted_grade || prediction.prediction || 'N/A'}
+                  {prediction[0].predicted_grade || prediction[0].prediction || 'N/A'}
                 </div>
                 <p className="text-gray-300 text-sm mb-4">Predicted Final Grade</p>
                 <div className="bg-blue-600 bg-opacity-20 rounded-lg p-3">
@@ -305,7 +344,7 @@ const StudentDashboard = () => {
         </div>
         <div className="mt-8 text-center">
           <p className="text-gray-500 text-sm">
-            © 2024 Student Analysis Dashboard. All rights reserved.
+            © 2025 Student Analysis Dashboard. All rights reserved.
           </p>
         </div>
       </div>
