@@ -11,12 +11,14 @@
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^5.1.0",
+    "flask": "^0.2.10",
     "jsonwebtoken": "^9.0.2",
     "mysql2": "^3.14.3",
     "next": "15.4.6",
     "python-shell": "^5.0.0",
     "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "react-dom": "19.1.0",
+    "scikit-learn": "^0.1.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
