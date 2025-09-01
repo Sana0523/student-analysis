@@ -26,6 +26,7 @@ export default function Home() {
     });
     const data= await response.json();
     if(data.success) {
+      localStorage.setItem('accessToken', data.token);
       if(data.user.role=== 'teacher') {
         router.push('/teacher_dashboard');
       } else if(data.user.role === 'student') {

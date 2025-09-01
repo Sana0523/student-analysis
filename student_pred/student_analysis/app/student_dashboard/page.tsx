@@ -40,7 +40,7 @@ const StudentDashboard = () => {
   const studentId='st1';
 
   useEffect(() => {
-    const token= localStorage.getItem('token');
+    const token= localStorage.getItem('accessToken');
     if(!token) {
       window.location.href = '/';
       return;
@@ -124,7 +124,7 @@ const StudentDashboard = () => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
+    localStorage.removeItem('accesstoken');
     window.location.href = '/';
   }; 
 
@@ -235,10 +235,10 @@ const StudentDashboard = () => {
             <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
               🎯 Performance Prediction
             </h3>
-            {prediction && prediction[0] ? (
+            {prediction ? (
               <div className="text-center">
                 <div className="text-3xl font-bold text-blue-400 mb-2">
-                  {prediction[0].predicted_grade || prediction[0].prediction || 'N/A'}
+                  {prediction.predicted_grade || prediction.prediction || 'N/A'}
                 </div>
                 <p className="text-gray-300 text-sm mb-4">Predicted Final Grade</p>
                 <div className="bg-blue-600 bg-opacity-20 rounded-lg p-3">
