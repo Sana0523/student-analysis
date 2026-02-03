@@ -8,6 +8,8 @@ const FLASK_API_URL = process.env.FLASK_API_URL || 'http://127.0.0.1:5000/predic
 const SECRET_KEY = process.env.JWT_SECRET_KEY || "my-super-secret-key-for-development";
 
 // GET: Fetch predictions for all students (for teacher dashboard)
+// filepath: c:\Users\sanaf\student_pred\student_analysis\app\api\predictions\route.ts
+// ...existing code...
 export async function GET() {
     try {
         const [students] = await pool.query('SELECT * FROM students');
@@ -25,24 +27,25 @@ export async function GET() {
 
             let riskScore = 0;
 
-            // Grade-based risk
-            if (avgScore === 0) riskScore += 20; // No grades yet
-            else if (avgScore < 50) riskScore += 40;
-            else if (avgScore < 60) riskScore += 30;
-            else if (avgScore < 70) riskScore += 15;
-            else if (avgScore < 80) riskScore += 5;
+            // Grade-based risk (Primary Factor)
+            if (avgScore === 0) riskScore += 25; // No grades yet
+            else if (avgScore < 50) riskScore += 50; // F
+            else if (avgScore < 60) riskScore += 40; // D
+            else if (avgScore < 70) riskScore += 25; // C
+            else if (avgScore < 80) riskScore += 10; // B
 
+            // Other factors are now secondary
             // Study hours factor
-            if (student.study_hours < 5) riskScore += 20;
-            else if (student.study_hours < 10) riskScore += 10;
+            if (student.study_hours < 5) riskScore += 15;
+            else if (student.study_hours < 10) riskScore += 5;
 
             // Failures factor
-            if (student.failures > 2) riskScore += 25;
-            else if (student.failures > 0) riskScore += 15;
+            if (student.failures > 2) riskScore += 20;
+            else if (student.failures > 0) riskScore += 10;
 
             // Absences factor
             if (student.absences > 10) riskScore += 15;
-            else if (student.absences > 5) riskScore += 10;
+            else if (student.absences > 5) riskScore += 5;
 
             let riskLevel: 'Low' | 'Medium' | 'High';
             if (riskScore >= 50) riskLevel = 'High';
@@ -62,6 +65,7 @@ export async function GET() {
         return NextResponse.json({ error: 'Failed to generate predictions' }, { status: 500 });
     }
 }
+
 
 // POST: Predict grade for a student
 export async function POST(request: Request) {

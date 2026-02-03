@@ -11,12 +11,15 @@ export async function GET() {
     // // Assuming the import is correct, this line should work
     // return NextResponse.json({ success: true, grades });
     try {
-        const [rows] = await db.query('SELECT * FROM grades');
-        return NextResponse.json({ success: true, grades: rows });
-    } catch (error) {
-        console.error("Error fetching grades:", error);
-        return NextResponse.json({ success: false, message: "Failed to fetch grades." });
-    }
+    const [rows] = await pool.query(`
+      SELECT g.id, g.student_id, g.subject, g.score, g.grade 
+      FROM grades g
+    `);
+    return NextResponse.json(rows);
+  } catch (error) {
+    console.error('Error fetching grades:', error);
+    return NextResponse.json({ error: 'Failed to fetch grades' }, { status: 500 });
+  }
 }
 // Handles POST requests to add a new grade
 export async function POST(request: Request) {
