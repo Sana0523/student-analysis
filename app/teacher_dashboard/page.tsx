@@ -14,7 +14,7 @@ type Student = {
 
 type Grade = {
   id: string;
-  studentId: string;
+  student_id: string;
   subject: string;
   score: number;
   grade?: string;
@@ -439,7 +439,7 @@ const TeacherDashboard = () => {
                             </thead>
                             <tbody>
                                 {grades.map(g => {
-                                    const student = students.find(s => s.id === g.studentId);
+                                    const student = students.find(s => s.id === g.student_id);
                                     return (
                                         <tr key={g.id} className="border-b border-gray-700 hover:bg-gray-750">
                                             <td className="p-4 font-medium">{student?.name || 'Unknown'}</td>

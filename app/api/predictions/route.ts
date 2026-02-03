@@ -1,11 +1,69 @@
 import { NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
+import pool from '@/db';
 
 // It's crucial this URL is correct, especially for deployment.
 const FLASK_API_URL = process.env.FLASK_API_URL || 'http://127.0.0.1:5000/predict';
 // This MUST match the key used in the login route. Using an environment variable is best practice.
 const SECRET_KEY = process.env.JWT_SECRET_KEY || "my-super-secret-key-for-development";
 
+// GET: Fetch predictions for all students (for teacher dashboard)
+export async function GET() {
+    try {
+        const [students] = await pool.query('SELECT * FROM students');
+        const [grades] = await pool.query('SELECT * FROM grades');
+
+        const studentList = students as any[];
+        const gradeList = grades as any[];
+
+        const predictions = studentList.map(student => {
+            const studentGrades = gradeList.filter(g => g.student_id === student.id);
+
+            const avgScore = studentGrades.length > 0
+                ? studentGrades.reduce((sum, g) => sum + g.score, 0) / studentGrades.length
+                : 0;
+
+            let riskScore = 0;
+
+            // Grade-based risk
+            if (avgScore === 0) riskScore += 20; // No grades yet
+            else if (avgScore < 50) riskScore += 40;
+            else if (avgScore < 60) riskScore += 30;
+            else if (avgScore < 70) riskScore += 15;
+            else if (avgScore < 80) riskScore += 5;
+
+            // Study hours factor
+            if (student.study_hours < 5) riskScore += 20;
+            else if (student.study_hours < 10) riskScore += 10;
+
+            // Failures factor
+            if (student.failures > 2) riskScore += 25;
+            else if (student.failures > 0) riskScore += 15;
+
+            // Absences factor
+            if (student.absences > 10) riskScore += 15;
+            else if (student.absences > 5) riskScore += 10;
+
+            let riskLevel: 'Low' | 'Medium' | 'High';
+            if (riskScore >= 50) riskLevel = 'High';
+            else if (riskScore >= 25) riskLevel = 'Medium';
+            else riskLevel = 'Low';
+
+            return {
+                studentId: student.id,
+                riskLevel: riskLevel,
+                probability: Math.min(riskScore / 100, 1)
+            };
+        });
+
+        return NextResponse.json(predictions);
+    } catch (error) {
+        console.error('Prediction GET error:', error);
+        return NextResponse.json({ error: 'Failed to generate predictions' }, { status: 500 });
+    }
+}
+
+// POST: Predict grade for a student
 export async function POST(request: Request) {
     if (!SECRET_KEY) {
         console.error("JWT_SECRET_KEY is not set on the server.");
