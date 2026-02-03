@@ -37,8 +37,8 @@ export async function POST(request: Request) {
 
     // Insert the new grade into the database
     const [result] = await db.query(
-      'INSERT INTO grades (studentId, subject, score, grade, date) VALUES (?, ?, ?, ?, ?)',
-      [studentId, subject, score, letterGrade, new Date()]
+      'INSERT INTO grades (student_id, subject, score, grade) VALUES (?, ?, ?, ?)',
+      [studentId, subject, score, letterGrade]
     );
 
     // You can check result.insertId to confirm the insert
