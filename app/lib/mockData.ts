@@ -1,14 +1,36 @@
-// This file contains mock data for development.
-// In a real application, this data would come from a database.
-// NOTE: These are 'let' instead of 'const' to allow adding new data from the UI.
+/**
+ * Mock Data (DEPRECATED)
+ * ======================
+ * 
+ * ⚠️ WARNING: This file is deprecated and should not be used.
+ * All API routes now use the database instead.
+ * 
+ * This file is kept for reference only and will be removed in a future version.
+ * See schema.sql for the proper database schema.
+ * 
+ * Migration Status:
+ * - /api/auth/login → Now uses database (users table)
+ * - /api/students → Now uses database (students table)
+ * - /api/students/[id] → Now uses database
+ * - /api/grades → Now uses database (grades table)
+ * - /api/grades/student/[studentId] → Now uses database
+ * - /api/predictions → Now stores to database (predictions table)
+ */
 
-let users = [
+// ============================================
+// DEPRECATED - DO NOT USE IN NEW CODE
+// ============================================
+
+// These exports are maintained only for backward compatibility
+// with any code that hasn't been migrated yet
+
+export const users = [
   { id: 1, email: 'teacher@school.vps', password: 'password123', role: 'teacher' },
   { id: 2, email: 'student@school.vps', password: 'password123', role: 'student' },
   { id: 3, email: 'alice@school.vps', password: 'password123', role: 'student' },
 ];
 
-let students = [
+export const students = [
   { 
     id: 'st1', 
     name: 'Alice Johnson', 
@@ -38,7 +60,7 @@ let students = [
   },
 ];
 
-let grades = [
+export const grades = [
   { id: 'g1', studentId: 'st1', subject: 'Math', score: 88, grade: 'B+' },
   { id: 'g2', studentId: 'st1', subject: 'Science', score: 92, grade: 'A' },
   { id: 'g3', studentId: 'st1', subject: 'History', score: 75, grade: 'C+' },
@@ -48,7 +70,10 @@ let grades = [
   { id: 'g7', studentId: 'st3', subject: 'English', score: 89, grade: 'B+' },
 ];
 
-// We are exporting the variables themselves so they can be modified in memory
-// by the API routes when new data is added.
-export { users, students, grades };
+// Predictions export (previously missing, causing runtime error)
+export const predictions = [
+  { studentId: 'st1', riskLevel: 'Low', predicted_grade: 'B+', confidence: 85 },
+  { studentId: 'st2', riskLevel: 'Medium', predicted_grade: 'C', confidence: 78 },
+  { studentId: 'st3', riskLevel: 'Low', predicted_grade: 'A', confidence: 92 },
+];
 

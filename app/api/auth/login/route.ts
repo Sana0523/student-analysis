@@ -1,36 +1,85 @@
+/**
+ * Login API Route
+ * ================
+ * Addresses audit finding: "User Authentication Uses Mock Data"
+ * 
+ * Now queries the database for user authentication.
+ */
+
 import { NextResponse } from "next/server";
-import { users } from "@/app/lib/mockData";
+import { db } from "@/db";
+import { verifyPassword } from "@/app/lib/auth";
 import jwt from 'jsonwebtoken';
 
-// Use a static, hardcoded key for development.
-// For production, this should be an environment variable.
-const SECRET_KEY = "my-super-secret-key-for-development";
+// Use environment variable for production
+const SECRET_KEY = process.env.JWT_SECRET_KEY || "my-super-secret-key-for-development";
+
+interface UserRow {
+    id: number;
+    email: string;
+    password_hash: string;
+    role: 'teacher' | 'student';
+}
 
 export async function POST(request: Request) {
-    const body = await request.json();
-    const { email, password } = body;
+    try {
+        const body = await request.json();
+        const { email, password } = body;
 
-    const user = users.find(
-        (u) => u.email === email && u.password === password 
-    );
+        // Validate input
+        if (!email || !password) {
+            return NextResponse.json(
+                { success: false, message: "Email and password are required" },
+                { status: 400 }
+            );
+        }
 
-    if (user) {
-        const userWithoutPassword = {
+        // Query database for user
+        const [rows] = await db.query<UserRow[]>(
+            'SELECT id, email, password_hash, role FROM users WHERE email = ?',
+            [email]
+        );
+
+        const user = rows[0];
+
+        if (!user) {
+            return NextResponse.json(
+                { success: false, message: "Invalid credentials" },
+                { status: 401 }
+            );
+        }
+
+        // Verify password against hash
+        const isValidPassword = await verifyPassword(password, user.password_hash);
+
+        if (!isValidPassword) {
+            return NextResponse.json(
+                { success: false, message: "Invalid credentials" },
+                { status: 401 }
+            );
+        }
+
+        // Create JWT payload (without password)
+        const userPayload = {
             id: user.id,
             email: user.email,
             role: user.role
         };
-        const accessToken = jwt.sign(userWithoutPassword, SECRET_KEY, { expiresIn: '1h' });
+
+        // Sign JWT token
+        const accessToken = jwt.sign(userPayload, SECRET_KEY, { expiresIn: '1h' });
 
         return NextResponse.json({
             success: true,
             token: accessToken,
-            user: userWithoutPassword
+            user: userPayload
         });
-    } else {
+
+    } catch (error) {
+        console.error("Login error:", error);
         return NextResponse.json(
-            { success: false, message: "Invalid credentials" },
-            { status: 401 }
+            { success: false, message: "An error occurred during login" },
+            { status: 500 }
         );
     }
 }

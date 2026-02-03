@@ -19,8 +19,20 @@ def predict(input_data,max_marks):
     input_df=pd.DataFrame([input_data],columns=required_features)
     scaled_prediction=model.predict(input_df)
     original_prediction = grade_scaler.inverse_transform(scaled_prediction.reshape(-1, 1))
-    final_grade = original_prediction[0][0]
+    
+    # FIX for 503% Bug: Clamp final_grade to valid range [0, 20]
+    # The ML model (linear regression) can extrapolate beyond training bounds,
+    # producing values outside the Portuguese grading scale (0-20).
+    # Without clamping, values like 100.6 would become (100.6/20)*100 = 503%
+    raw_grade = original_prediction[0][0]
+    final_grade = max(0, min(20, raw_grade))
+    
+    # Scale to the requested max_marks (typically 100)
     predicted_grade_on_new_scale = (final_grade / 20) * max_marks
+    
+    # Additional validation: ensure percentage never exceeds 100%
+    predicted_grade_on_new_scale = min(predicted_grade_on_new_scale, max_marks)
+    
     if final_grade < 10:
       risk_level = "High"
     elif final_grade < 14:

@@ -1,49 +1,66 @@
-import { jwtVerify, JWTPayload } from 'jose';
+/**
+ * JWT Utilities
+ * =============
+ * Addresses audit finding: "verifyJwt Function is Broken"
+ * 
+ * Uses 'jose' library for modern JWT verification.
+ */
+
+import { jwtVerify, SignJWT, JWTPayload } from 'jose';
 
 // Define the interface for your expected payload
-// This should match what you put into the token when you create it (e.g., on login)
-interface CustomJwtPayload extends JWTPayload {
-  id: string; // Or 'sub', 'username', etc., whatever you use to identify the user
-  // Add other properties you might have included in the token
+export interface CustomJwtPayload extends JWTPayload {
+  id: number;
+  email: string;
+  role: 'teacher' | 'student';
 }
 
+// Get the secret key - must match what's used in login
+const getSecretKey = (): Uint8Array => {
+  const secret = process.env.JWT_SECRET_KEY || 'my-super-secret-key-for-development';
+  return new TextEncoder().encode(secret);
+};
+
 /**
- * Verifies the JWT token and returns its payload.
+ * Verifies a JWT token and returns its payload.
  * @param token The JWT token string.
  * @returns The payload of the token if valid, otherwise null.
  */
-export function verifyJwt(token: string): CustomJwtPayload | null {
+export async function verifyJwt(token: string): Promise<CustomJwtPayload | null> {
   if (!token) {
     return null;
   }
 
-  const secret = process.env.JWT_SECRET;
-  if (!secret) {
-    console.error('JWT_SECRET environment variable is not set.');
-    // In a real app, you should throw an error or handle this securely
-    return null;
-  }
-
   try {
-    // We are verifying the token synchronously here.
-    // For serverless environments, async is preferred,
-    // but this simplifies the 'verifyJwt' function signature.
-    // Let's stick to the async/await pattern for best practice.
-    
-    // NOTE: This function can't be async if your route.ts
-    // calls it synchronously like `const payload = verifyJwt(token);`.
-    
-    // Let's adjust this to be synchronous to match the code you have.
-    // **Correction**: `jose`'s `jwtVerify` is *always* async.
-    // This means we must update your API route to `await` it.
-    // This is the correct, modern way.
-
-    // **This file (jwt.ts) should be:**
-    console.error("This `verifyJwt` function should be async. Please see the correct implementation.");
-    return null; // This synchronous version is incorrect with 'jose'
-
+    const { payload } = await jwtVerify(token, getSecretKey());
+    return payload as CustomJwtPayload;
   } catch (error) {
-    console.error('JWT verification failed:', error);
+    // Token is invalid or expired
     return null;
   }
+}
+
+/**
+ * Creates a new JWT token (for use in login route if migrating from jsonwebtoken)
+ * @param payload The data to encode in the token
+ * @returns The signed JWT token
+ */
+export async function createJwt(payload: Omit<CustomJwtPayload, 'iat' | 'exp'>): Promise<string> {
+  return new SignJWT(payload)
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime('1h')
+    .sign(getSecretKey());
+}
+
+/**
+ * Extracts the token from an Authorization header
+ * @param authHeader The Authorization header value
+ * @returns The token string or null
+ */
+export function extractToken(authHeader: string | null): string | null {
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return null;
+  }
+  return authHeader.split(' ')[1];
 }

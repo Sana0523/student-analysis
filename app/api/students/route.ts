@@ -34,8 +34,8 @@ export async function POST(request: Request) {
 
     // Insert the new student into the database
     await db.query(
-      'INSERT INTO students (id, name, email, age, study_hours, failures, absences, date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-      [newStudentId, name, email, age, study_hours, failures, absences, new Date()]
+      'INSERT INTO students (id, name, email, age, study_hours, failures, absences) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [newStudentId, name, email, age, study_hours, failures, absences]
     );
 
     return NextResponse.json({ success: true, message: 'Student added successfully!', studentId: newStudentId }, { status: 201 });
