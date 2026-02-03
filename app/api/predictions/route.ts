@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
-import pool from '@/db';
+import { db as pool } from '@/db';
 
 // It's crucial this URL is correct, especially for deployment.
 const FLASK_API_URL = process.env.FLASK_API_URL || 'http://127.0.0.1:5000/predict';
@@ -10,6 +10,8 @@ const SECRET_KEY = process.env.JWT_SECRET_KEY || "my-super-secret-key-for-develo
 // GET: Fetch predictions for all students (for teacher dashboard)
 // filepath: c:\Users\sanaf\student_pred\student_analysis\app\api\predictions\route.ts
 // ...existing code...
+// ...existing imports...
+
 export async function GET() {
     try {
         const [students] = await pool.query('SELECT * FROM students');
@@ -18,38 +20,38 @@ export async function GET() {
         const studentList = students as any[];
         const gradeList = grades as any[];
 
+        console.log('Students:', studentList.map(s => ({ id: s.id, name: s.name })));
+        console.log('Grades:', gradeList.map(g => ({ student_id: g.student_id, score: g.score })));
+
         const predictions = studentList.map(student => {
-            const studentGrades = gradeList.filter(g => g.student_id === student.id);
+            // Match using string comparison to handle UUID/int mismatches
+            const studentGrades = gradeList.filter(g => String(g.student_id) === String(student.id));
+            
+            console.log(`Student ${student.name} (${student.id}) has ${studentGrades.length} grades`);
 
             const avgScore = studentGrades.length > 0
-                ? studentGrades.reduce((sum, g) => sum + g.score, 0) / studentGrades.length
+                ? studentGrades.reduce((sum, g) => sum + Number(g.score), 0) / studentGrades.length
                 : 0;
+
+            console.log(`Student ${student.name} avgScore: ${avgScore}`);
 
             let riskScore = 0;
 
-            // Grade-based risk (Primary Factor)
-            if (avgScore === 0) riskScore += 25; // No grades yet
-            else if (avgScore < 50) riskScore += 50; // F
-            else if (avgScore < 60) riskScore += 40; // D
-            else if (avgScore < 70) riskScore += 25; // C
-            else if (avgScore < 80) riskScore += 10; // B
+            // Grade-based risk (Primary Factor - weighted heavily)
+            if (studentGrades.length === 0) riskScore += 20; // No grades yet
+            else if (avgScore >= 80) riskScore += 0;  // A/B student - no risk from grades
+            else if (avgScore >= 70) riskScore += 10; // C student
+            else if (avgScore >= 60) riskScore += 25; // D student
+            else riskScore += 40; // F student
 
-            // Other factors are now secondary
-            // Study hours factor
-            if (student.study_hours < 5) riskScore += 15;
-            else if (student.study_hours < 10) riskScore += 5;
-
-            // Failures factor
-            if (student.failures > 2) riskScore += 20;
-            else if (student.failures > 0) riskScore += 10;
-
-            // Absences factor
-            if (student.absences > 10) riskScore += 15;
-            else if (student.absences > 5) riskScore += 5;
+            // Secondary factors (reduced weight)
+            if (student.study_hours < 5) riskScore += 10;
+            if (student.failures > 0) riskScore += 10;
+            if (student.absences > 10) riskScore += 10;
 
             let riskLevel: 'Low' | 'Medium' | 'High';
-            if (riskScore >= 50) riskLevel = 'High';
-            else if (riskScore >= 25) riskLevel = 'Medium';
+            if (riskScore >= 40) riskLevel = 'High';
+            else if (riskScore >= 20) riskLevel = 'Medium';
             else riskLevel = 'Low';
 
             return {
@@ -65,6 +67,8 @@ export async function GET() {
         return NextResponse.json({ error: 'Failed to generate predictions' }, { status: 500 });
     }
 }
+
+// ...existing POST code...
 
 
 // POST: Predict grade for a student
