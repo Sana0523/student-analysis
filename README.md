@@ -209,9 +209,6 @@ curl http://localhost:3000/api/students \
    - `linear_regression_model.pkl`
    - `grade_scaler.pkl`
 
-### 503% Bug (Fixed)
-
-The prediction percentage is now clamped to valid ranges (0-100%) in `predict_script.py`.
 
 ## 📝 License
 
