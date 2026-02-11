@@ -48,7 +48,7 @@ const TeacherDashboard = () => {
 
   // Form states
   const [newStudent, setNewStudent] = useState({ name: '', email: '', age: 16, study_hours: 5, failures: 0, absences: 0 });
-  const [newGrade, setNewGrade] = useState({ student_id: '', subject: 'Math', score: 80 });
+  const [newGrade, setNewGrade] = useState({ student_id: '', subject: 'Math', score: 15 });
   
   // Modal States
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
@@ -195,6 +195,19 @@ const TeacherDashboard = () => {
           </div>
         )}
 
+        {/* --- Grade Scale Disclaimer --- */}
+        <div className="bg-blue-900/30 border border-blue-500/50 rounded-lg p-4 mb-6 flex items-start gap-3">
+          <svg className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <div>
+            <p className="text-blue-200 text-sm">
+              <span className="font-semibold">Grade Scale Notice:</span> The system currently uses a 0-20 grading scale (Portuguese system). 
+              When adding grades, please enter values between 0-20. The displayed percentages are automatically converted for clarity.
+            </p>
+          </div>
+        </div>
+
         {/* --- Metrics Cards --- */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-gray-800 p-6 rounded-lg text-center border border-gray-700">
@@ -316,6 +329,14 @@ const TeacherDashboard = () => {
           {activeTab === 'addGrade' && (
             <div className="bg-gray-800 p-8 rounded-lg max-w-md mx-auto border border-gray-700">
               <h2 className="text-xl font-bold mb-6">Assign Grade</h2>
+              
+              {/* Grade Scale Reminder */}
+              <div className="bg-yellow-900/30 border border-yellow-500/50 rounded p-3 mb-4 text-sm">
+                <p className="text-yellow-200">
+                  <span className="font-semibold">⚠️ Important:</span> Enter grades on a <strong>0-20 scale</strong> (Portuguese grading system).
+                </p>
+              </div>
+
               <form onSubmit={handleAddGrade} className="space-y-4">
                 <select value={newGrade.student_id} onChange={e => setNewGrade({ ...newGrade, student_id: e.target.value })} className="w-full bg-gray-700 p-3 rounded border border-gray-600" required>
                   <option value="">Select Student</option>
@@ -324,7 +345,7 @@ const TeacherDashboard = () => {
                 <select value={newGrade.subject} onChange={e => setNewGrade({ ...newGrade, subject: e.target.value })} className="w-full bg-gray-700 p-3 rounded border border-gray-600" required>
                   {subjects.map(s => <option key={s.key} value={s}>{s}</option>)}
                 </select>
-                <input type="number" placeholder="Score (0-100)" value={newGrade.score} onChange={e => setNewGrade({ ...newGrade, score: Number(e.target.value) })} className="w-full bg-gray-700 p-3 rounded border border-gray-600" required />
+                <input type="number" placeholder="Score (0-20)" min="0" max="20" step="0.1" value={newGrade.score} onChange={e => setNewGrade({ ...newGrade, score: Number(e.target.value) })} className="w-full bg-gray-700 p-3 rounded border border-gray-600" required />
                 <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 p-3 rounded font-bold">Submit Grade</button>
               </form>
             </div>
