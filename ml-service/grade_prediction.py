@@ -19,5 +19,8 @@ model=LinearRegression()
 model.fit(x_train,y_train)
 model_filename = 'linear_regression_model.pkl'
 scaler_filename = 'grade_scaler.pkl'
+x_train_filename = 'x_train.pkl'
 joblib.dump(model, model_filename)
 joblib.dump(grade_scaler, scaler_filename)
+joblib.dump(x_train, x_train_filename)
+print(f"Saved X_train for SHAP explainability: {x_train_filename}")

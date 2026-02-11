@@ -3,13 +3,107 @@ import sys
 import json
 import joblib
 import pandas as pd
+import numpy as np
+import shap
+
 app = Flask(__name__)
+
+# Load model and scalers
 try:
   model=joblib.load('linear_regression_model.pkl')
   grade_scaler=joblib.load('grade_scaler.pkl')
 except FileNotFoundError as e:
     print(json.dumps({'success':False, 'message':f'Model or scaler failed: {str(e)}'}))
     sys.exit()
+
+# Load X_train for SHAP explainer (with fallback)
+try:
+  X_train = joblib.load('x_train.pkl')
+  shap_explainer = shap.LinearExplainer(model, X_train)
+  print("SHAP explainer initialized successfully")
+except FileNotFoundError:
+  X_train = None
+  shap_explainer = None
+  print("Warning: x_train.pkl not found. SHAP explanations will be unavailable.")
+  print("Run grade_prediction.py to generate x_train.pkl")
+def calculate_shap_explanation(input_df, final_grade, risk_level):
+  """Calculate SHAP values and generate human-readable explanations."""
+  if shap_explainer is None:
+    return None
+  
+  feature_names = ['age', 'failures', 'absences', 'studytime', 'G1', 'G2']
+  feature_display_names = {
+    'age': 'Age',
+    'failures': 'Past Failures',
+    'absences': 'Absences',
+    'studytime': 'Study Time',
+    'G1': 'First Period Grade',
+    'G2': 'Second Period Grade'
+  }
+  
+  try:
+    # Calculate SHAP values
+    shap_values = shap_explainer.shap_values(input_df)
+    
+    # Handle both 1D and 2D shap_values arrays
+    if len(shap_values.shape) == 1:
+      shap_vals = shap_values
+    else:
+      shap_vals = shap_values[0]
+    
+    # Build feature contributions list
+    feature_contributions = []
+    for i, feature in enumerate(feature_names):
+      shap_val = float(shap_vals[i])
+      input_value = float(input_df.iloc[0][feature])
+      
+      # Avoid division by zero
+      safe_grade = max(abs(final_grade), 0.001)
+      contribution_pct = (shap_val / safe_grade) * 100
+      
+      # Clamp contribution percentage to [-100%, +100%]
+      contribution_pct = max(-100, min(100, contribution_pct))
+      
+      feature_contributions.append({
+        'factor': feature_display_names.get(feature, feature.replace('_', ' ').title()),
+        'value': input_value,
+        'shap_value': round(shap_val, 3),
+        'impact': 'positive' if shap_val > 0 else 'negative',
+        'contribution_percentage': f"{contribution_pct:+.1f}%"
+      })
+    
+    # Sort by absolute SHAP value (most impactful first)
+    top_factors = sorted(
+      feature_contributions,
+      key=lambda x: abs(x['shap_value']),
+      reverse=True
+    )[:5]
+    
+    # Generate human-readable summary
+    risk_factors = [f for f in top_factors if f['impact'] == 'negative']
+    summary = f"{risk_level} Risk"
+    if risk_factors:
+      main_factors = ', '.join(
+        [f"{f['factor']} ({f['value']})" for f in risk_factors[:2]]
+      )
+      summary += f": Primary concerns are {main_factors}"
+    elif risk_level == "Low":
+      positive_factors = [f for f in top_factors if f['impact'] == 'positive'][:2]
+      if positive_factors:
+        main_factors = ', '.join(
+          [f"{f['factor']} ({f['value']})" for f in positive_factors]
+        )
+        summary += f": Strengths include {main_factors}"
+    
+    return {
+      'summary': summary,
+      'top_factors': top_factors
+    }
+  except Exception as e:
+    print(f"SHAP calculation error: {e}")
+    return None
+
+
 def predict(input_data,max_marks):
   required_features=['age','failures','absences','studytime','G1','G2']
   try:
@@ -39,12 +133,20 @@ def predict(input_data,max_marks):
       risk_level = "Medium"
     else:
       risk_level = "Low"
-        
-    return {
+    
+    # Calculate SHAP explanation
+    explanation = calculate_shap_explanation(input_df, final_grade, risk_level)
+    
+    result = {
       'success': True,
       'predicted_grade': f"{predicted_grade_on_new_scale:.2f}",
       'risk_level': risk_level,
     }
+    
+    if explanation:
+      result['explanation'] = explanation
+    
+    return result
   except Exception as e:
     print(f"PRediction error: {e}")
     return {'success':False,'message':str(e)}
