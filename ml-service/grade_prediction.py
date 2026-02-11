@@ -4,7 +4,7 @@ import joblib
 from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
-import kagglehub
+
 print("Training the model...")
 df=pd.read_csv(r"C:\Users\sanaf\OneDrive\Documents\student-mat.csv",sep=';')
 from sklearn.preprocessing import MinMaxScaler
