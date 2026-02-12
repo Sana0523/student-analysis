@@ -96,19 +96,22 @@ export async function POST(request: Request) {
         }
 
         const body = await request.json();
-        const { studentData, max_marks } = body;
+        const { studentData, max_marks, model } = body;
 
         // Validate that the necessary data is present
         if (!studentData || typeof max_marks === 'undefined') {
             return NextResponse.json({ success: false, message: 'Bad Request: Missing studentData or max_marks' }, { status: 400 });
         }
 
+        // Determine which Flask endpoint to use based on model selection
+        const endpoint = model ? '/predict-with-model' : '/predict';
+
         // Forward the request to the Flask API
-        const flaskResponse = await fetch(FLASK_API_URL, {
+        const flaskResponse = await fetch(`${FLASK_BASE_URL}${endpoint}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             // FIX: Renamed 'studentData' to 'student_data' to match the Python script's expectation.
-            body: JSON.stringify({ student_data: studentData, max_marks }),
+            body: JSON.stringify({ student_data: studentData, max_marks, ...(model && { model }) }),
             signal: AbortSignal.timeout(10000), // 10-second timeout for the ML service
         });
 
@@ -124,7 +127,9 @@ export async function POST(request: Request) {
             success: true,
             prediction: {
                 predicted_grade: predictionData.predicted_grade,
-                risk_level: predictionData.risk_level
+                risk_level: predictionData.risk_level,
+                ...(predictionData.explanation && { explanation: predictionData.explanation }),
+                ...(predictionData.model_used && { model_used: predictionData.model_used }),
             }
         });
 
