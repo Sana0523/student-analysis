@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 export async function GET(request: Request) {
   try {
-    const flaskUrl = process.env.FLASK_ML_URL || 'http://localhost:5000';
+    const flaskUrl = process.env.FLASK_ML_URL || 'http://127.0.0.1:5000';
 
     const response = await fetch(`${flaskUrl}/model-metrics`, {
       method: 'GET',

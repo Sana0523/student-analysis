@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const flaskUrl = process.env.FLASK_ML_URL || 'http://localhost:5000';
+    const flaskUrl = process.env.FLASK_ML_URL || 'http://127.0.0.1:5000';
 
     // Forward simulation request to Flask
     const response = await fetch(`${flaskUrl}/simulate`, {
