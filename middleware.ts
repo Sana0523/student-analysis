@@ -19,6 +19,8 @@ import { jwtVerify } from 'jose';
 const PUBLIC_ROUTES = [
   '/api/auth/login',
   '/api/auth/register', // For future use
+  '/api/ml/model-metrics', // ML model metrics (read-only)
+  '/api/predictions/simulate', // What-If simulation endpoint
 ];
 
 // Routes that only teachers can access (CRUD operations)
