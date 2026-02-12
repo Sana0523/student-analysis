@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 import { db as pool } from '@/db';
 
-// It's crucial this URL is correct, especially for deployment.
-const FLASK_API_URL = process.env.FLASK_API_URL || 'http://127.0.0.1:5000/predict';
+// Base URL for Flask ML service
+const FLASK_BASE_URL = process.env.FLASK_ML_URL || 'http://127.0.0.1:5000';
 // This MUST match the key used in the login route. Using an environment variable is best practice.
 const SECRET_KEY = process.env.JWT_SECRET_KEY || "my-super-secret-key-for-development";
 
