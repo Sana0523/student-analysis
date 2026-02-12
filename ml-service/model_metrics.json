@@ -1,0 +1,26 @@
+{
+  "linear_regression": {
+    "name": "Linear Regression",
+    "description": "Fast, interpretable baseline",
+    "r2_score": 0.7824,
+    "mae": 0.0667,
+    "rmse": 0.1056,
+    "train_r2": 0.8401
+  },
+  "random_forest": {
+    "name": "Random Forest",
+    "description": "Handles non-linear patterns",
+    "r2_score": 0.8554,
+    "mae": 0.0515,
+    "rmse": 0.0861,
+    "train_r2": 0.9783
+  },
+  "xgboost": {
+    "name": "XGBoost",
+    "description": "Highest accuracy, gradient boosting",
+    "r2_score": 0.8419,
+    "mae": 0.0541,
+    "rmse": 0.09,
+    "train_r2": 0.9902
+  }
+}
