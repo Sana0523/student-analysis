@@ -11,6 +11,9 @@ import shap
 app = Flask(__name__)
 CORS(app)  # Allow Next.js API to call Flask
 
+# Change working directory to ml-service folder so .pkl files are found
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
 # Load model and scalers
 try:
   model=joblib.load('linear_regression_model.pkl')
