@@ -178,6 +178,45 @@ const TeacherDashboard = () => {
   const openEditGradeModal = (g: Grade) => { setEditingGrade({ ...g }); setEditGradeModal({ open: true, grade: g }); };
   const openDeleteModal = (type: 'student' | 'grade', id: string, name: string) => setDeleteModal({ open: true, type, id, name });
 
+  const downloadStudentReport = async (studentId: string) => {
+    try {
+      setLoading(true);
+
+      const response = await fetch(`/api/reports/student/${studentId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate report');
+      }
+
+      // Convert response to blob
+      const blob = await response.blob();
+
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `student_${studentId}_report.pdf`;
+      document.body.appendChild(a);
+      a.click();
+
+      // Cleanup
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      setNotification({ type: 'success', message: 'Report downloaded successfully!' });
+    } catch (error) {
+      console.error('Download error:', error);
+      setNotification({ type: 'error', message: 'Failed to download report. Please try again.' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white text-xl">Loading Dashboard...</div>;
 
   return (
@@ -267,6 +306,7 @@ const TeacherDashboard = () => {
                         </span>
                       </td>
                       <td className="p-4 text-right">
+                        <button onClick={() => downloadStudentReport(s.id)} className="text-green-400 hover:underline mr-4" disabled={loading}>📄 Report</button>
                         <button onClick={() => openEditStudentModal(s)} className="text-blue-400 hover:underline mr-4">Edit</button>
                         <button onClick={() => openDeleteModal('student', s.id, s.name)} className="text-red-400 hover:underline">Delete</button>
                       </td>

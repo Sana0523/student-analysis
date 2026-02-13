@@ -1,4 +1,4 @@
-from flask import Flask,request,jsonify
+from flask import Flask,request,jsonify,send_file
 from flask_cors import CORS
 import sys
 import json
@@ -7,12 +7,27 @@ import joblib
 import pandas as pd
 import numpy as np
 import shap
+import mysql.connector
+from generate_report import generate_student_report
+from datetime import datetime
 
 app = Flask(__name__)
 CORS(app)  # Allow Next.js API to call Flask
 
 # Change working directory to ml-service folder so .pkl files are found
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
+# Database configuration
+DB_CONFIG = {
+    'host': 'localhost',
+    'user': 'root',
+    'password': 'Nadaf@123',
+    'database': 'student_data'
+}
+
+def get_db_connection():
+    """Create MySQL connection"""
+    return mysql.connector.connect(**DB_CONFIG)
 
 # Load model and scalers
 try:
@@ -427,6 +442,110 @@ def simulate():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/generate-report/<int:student_id>', methods=['GET'])
+def generate_report_endpoint(student_id):
+    """
+    Generate PDF report for a specific student
+    
+    URL: GET /generate-report/123
+    Returns: PDF file download
+    """
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        
+        # Fetch student data
+        cursor.execute("""
+            SELECT id, name, email, age, study_hours as studytime, failures, absences 
+            FROM students 
+            WHERE id = %s
+        """, (student_id,))
+        
+        student = cursor.fetchone()
+        
+        if not student:
+            return jsonify({'error': f'Student {student_id} not found'}), 404
+        
+        # Fetch grades
+        cursor.execute("""
+            SELECT subject, score, max_marks, grade, date
+            FROM grades
+            WHERE student_id = %s
+            ORDER BY date DESC
+        """, (student_id,))
+        
+        grades = cursor.fetchall()
+        
+        # Ensure max_marks has a default
+        for g in grades:
+            if not g.get('max_marks'):
+                g['max_marks'] = 20
+        
+        # Get prediction
+        g1_score = grades[0]['score'] if len(grades) > 0 else 10
+        g2_score = grades[1]['score'] if len(grades) > 1 else 10
+        
+        # Load model and make prediction
+        scaled_prediction = model.predict(np.array([[
+            student['age'],
+            student.get('failures', 0) or 0,
+            student.get('absences', 0) or 0,
+            student['studytime'],
+            g1_score,
+            g2_score
+        ]]))
+        
+        original_prediction = grade_scaler.inverse_transform(scaled_prediction.reshape(-1, 1))
+        final_grade = max(0, min(20, original_prediction[0][0]))
+        predicted_grade_on_new_scale = (final_grade / 20) * 100
+        
+        risk_level = "High" if final_grade < 10 else "Medium" if final_grade < 14 else "Low"
+        
+        # Calculate SHAP explanation
+        feature_names = ['age', 'failures', 'absences', 'studytime', 'G1', 'G2']
+        input_df = pd.DataFrame([[
+            student['age'],
+            student.get('failures', 0) or 0,
+            student.get('absences', 0) or 0,
+            student['studytime'],
+            g1_score,
+            g2_score
+        ]], columns=feature_names)
+        
+        explanation = calculate_shap_explanation(input_df, final_grade, risk_level)
+        
+        prediction_data = {
+            'predicted_grade': f"{predicted_grade_on_new_scale:.2f}",
+            'risk_level': risk_level,
+        }
+        
+        if explanation:
+            prediction_data['explanation'] = explanation
+        else:
+            prediction_data['explanation'] = {
+                'summary': f"{risk_level} Risk",
+                'top_factors': []
+            }
+        
+        # Generate PDF
+        pdf_buffer = generate_student_report(student, grades, prediction_data)
+        
+        cursor.close()
+        conn.close()
+        
+        # Return PDF as download
+        return send_file(
+            pdf_buffer,
+            mimetype='application/pdf',
+            as_attachment=True,
+            download_name=f'student_{student_id}_report.pdf'
+        )
+    
+    except Exception as e:
+        print(f"Report generation error: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+
 if __name__ == '__main__':
     print("="*60)
     print("STUDENT GRADE PREDICTION API")
@@ -436,6 +555,7 @@ if __name__ == '__main__':
     print("  POST   /predict-with-model   - Predict with model selection")
     print("  POST   /simulate             - What-If simulation")
     print("  GET    /model-metrics        - Get all model metrics")
+    print("  GET    /generate-report/<id>  - Generate PDF report")
     print("\nStarting Flask server...")
     print("="*60)
     
