@@ -190,7 +190,9 @@ const TeacherDashboard = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to generate report');
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('Report generation error:', errorData);
+        throw new Error(errorData.error || 'Failed to generate report');
       }
 
       // Convert response to blob
