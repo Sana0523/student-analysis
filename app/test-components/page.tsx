@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import ModelSelector from '@/app/components/ModelSelector';
 import FeatureImportanceChart from '@/app/components/FeatureImportanceChart';
 import WhatIfSimulator from '@/app/components/WhatIfSimulator';
+import AttendanceTrendChart from '@/app/components/AttendanceTrendChart';
 
 // Mock data for testing
 const mockStudent = {
@@ -62,6 +63,14 @@ const mockFactors = [
 
 export default function TestComponentsPage() {
   const [selectedModel, setSelectedModel] = useState('linear_regression');
+  const [attendanceData, setAttendanceData] = useState<{ weeks: string[]; attendance_rate: number[]; predicted_grades: number[] } | null>(null);
+
+  useEffect(() => {
+    fetch('/api/analytics/attendance-trend/1')
+      .then(res => res.json())
+      .then(data => setAttendanceData(data))
+      .catch(err => console.error('Failed to fetch attendance data:', err));
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-100 p-8">
@@ -104,6 +113,17 @@ export default function TestComponentsPage() {
             <span className="text-blue-600 font-mono">{selectedModel}</span>
           </p>
         </section>
+
+        {/* Attendance Trend Chart */}
+        {attendanceData && (
+          <section>
+            <h2 className="text-xl font-semibold mb-4">4. Attendance Trend Chart</h2>
+            <AttendanceTrendChart 
+              studentName="John Doe"
+              data={attendanceData}
+            />
+          </section>
+        )}
       </div>
     </div>
   );
