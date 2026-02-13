@@ -442,12 +442,12 @@ def simulate():
         return jsonify({'error': str(e)}), 500
 
 
-@app.route('/generate-report/<int:student_id>', methods=['GET'])
+@app.route('/generate-report/<student_id>', methods=['GET'])
 def generate_report_endpoint(student_id):
     """
     Generate PDF report for a specific student
     
-    URL: GET /generate-report/123
+    URL: GET /generate-report/st1 (or any student ID string)
     Returns: PDF file download
     """
     try:
@@ -485,12 +485,18 @@ def generate_report_endpoint(student_id):
         g1_score = grades[0]['score'] if len(grades) > 0 else 10
         g2_score = grades[1]['score'] if len(grades) > 1 else 10
         
+        # Ensure student fields have defaults
+        age = student.get('age') or 16
+        failures = student.get('failures') or 0
+        absences = student.get('absences') or 0
+        studytime = student.get('studytime') or 2
+        
         # Load model and make prediction
         scaled_prediction = model.predict(np.array([[
-            student['age'],
-            student.get('failures', 0) or 0,
-            student.get('absences', 0) or 0,
-            student['studytime'],
+            age,
+            failures,
+            absences,
+            studytime,
             g1_score,
             g2_score
         ]]))
@@ -504,10 +510,10 @@ def generate_report_endpoint(student_id):
         # Calculate SHAP explanation
         feature_names = ['age', 'failures', 'absences', 'studytime', 'G1', 'G2']
         input_df = pd.DataFrame([[
-            student['age'],
-            student.get('failures', 0) or 0,
-            student.get('absences', 0) or 0,
-            student['studytime'],
+            age,
+            failures,
+            absences,
+            studytime,
             g1_score,
             g2_score
         ]], columns=feature_names)
@@ -527,8 +533,19 @@ def generate_report_endpoint(student_id):
                 'top_factors': []
             }
         
+        # Prepare student data for report with proper defaults
+        report_student_data = {
+            'id': student['id'],
+            'name': student.get('name', 'Unknown Student'),
+            'email': student.get('email', 'N/A'),
+            'age': age,
+            'studytime': studytime,
+            'failures': failures,
+            'absences': absences
+        }
+        
         # Generate PDF
-        pdf_buffer = generate_student_report(student, grades, prediction_data)
+        pdf_buffer = generate_student_report(report_student_data, grades, prediction_data)
         
         cursor.close()
         conn.close()
