@@ -211,9 +211,10 @@ const TeacherDashboard = () => {
       document.body.removeChild(a);
 
       setNotification({ type: 'success', message: 'Report downloaded successfully!' });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Download error:', error);
-      setNotification({ type: 'error', message: 'Failed to download report. Please try again.' });
+      const errorMessage = error.message || 'Failed to download report. Please try again.';
+      setNotification({ type: 'error', message: errorMessage });
     } finally {
       setLoading(false);
     }

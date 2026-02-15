@@ -137,7 +137,8 @@ const StudentDashboard = () => {
       }
     } catch (error: any) {
       console.error("Error fetching student data:", error);
-      setError(error.message || "An error occurred while fetching student data.");
+      const errorMessage = error.message || "An error occurred while fetching student data.";
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

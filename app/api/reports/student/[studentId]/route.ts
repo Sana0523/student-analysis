@@ -13,16 +13,26 @@ export async function GET(
       `${flaskUrl}/generate-report/${studentId}`,
       {
         method: 'GET',
+        signal: AbortSignal.timeout(30000), // 30 second timeout for report generation
       }
     );
 
     if (!response.ok) {
       let error;
-      try {
-        error = await response.json();
-      } catch {
-        error = { error: 'Report generation failed' };
+      const contentType = response.headers.get('content-type');
+      
+      // Only try to parse JSON if the content type is JSON
+      if (contentType && contentType.includes('application/json')) {
+        try {
+          error = await response.json();
+        } catch {
+          error = { error: 'Report generation failed' };
+        }
+      } else {
+        const textError = await response.text().catch(() => '');
+        error = { error: textError || 'Report generation failed' };
       }
+      
       return NextResponse.json(
         { error: error.error || 'Report generation failed' },
         { status: response.status }
