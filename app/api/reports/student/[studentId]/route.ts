@@ -40,10 +40,24 @@ export async function GET(
         'Content-Disposition': `attachment; filename=student_${studentId}_report.pdf`,
       },
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Report API error:', error);
+    
+    // Provide more specific error messages
+    let errorMessage = 'Failed to generate report';
+    if (error.name === 'AbortError' || error.message?.includes('aborted')) {
+      errorMessage = 'Report generation timed out. Please try again.';
+    } else if (error.message?.includes('fetch failed') || error.code === 'ECONNREFUSED') {
+      errorMessage = 'Unable to connect to ML service. Please ensure the Flask server is running.';
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+    
     return NextResponse.json(
-      { error: 'Failed to generate report' },
+      { 
+        error: errorMessage,
+        debug: process.env.NODE_ENV === 'development' ? error.toString() : undefined
+      },
       { status: 500 }
     );
   }

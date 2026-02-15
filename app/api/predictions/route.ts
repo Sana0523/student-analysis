@@ -134,7 +134,22 @@ export async function POST(request: Request) {
         });
 
     } catch (error: any) {
-        console.error('Error in /api/predictions route:', error.message);
-        return NextResponse.json({ success: false, message: `An internal server error occurred.` }, { status: 500 });
+        console.error('Error in /api/predictions route:', error);
+        
+        // Provide more specific error messages
+        let errorMessage = 'An internal server error occurred.';
+        if (error.name === 'AbortError' || error.message?.includes('aborted')) {
+            errorMessage = 'Request timed out. The ML service may be slow or unavailable.';
+        } else if (error.message?.includes('fetch failed') || error.code === 'ECONNREFUSED') {
+            errorMessage = 'Unable to connect to ML service. Please ensure the Flask server is running.';
+        } else if (error.message) {
+            errorMessage = error.message;
+        }
+        
+        return NextResponse.json({ 
+            success: false, 
+            message: errorMessage,
+            debug: process.env.NODE_ENV === 'development' ? error.toString() : undefined
+        }, { status: 500 });
     }
 }
