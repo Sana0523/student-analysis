@@ -240,12 +240,14 @@ class TestPDFGeneration:
         pdf_buffer = generate_student_report(sample_student, sample_grades, sample_prediction)
 
         assert pdf_buffer is not None
-        assert pdf_buffer.tell() > 0  # Buffer has content
 
-        # Check PDF signature
-        pdf_buffer.seek(0)
+        # Check PDF signature (buffer is seeked to 0 by generate_student_report)
         header = pdf_buffer.read(4)
         assert header == b'%PDF', "Invalid PDF signature"
+
+        # Check buffer has substantial content
+        pdf_buffer.seek(0, 2)  # Seek to end
+        assert pdf_buffer.tell() > 100, "PDF buffer too small"
 
 
 class TestScalerAndFeatures:
