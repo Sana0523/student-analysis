@@ -68,7 +68,9 @@ describe('ModelSelector', () => {
     render(<ModelSelector selectedModel="linear_regression" onModelChange={mockOnChange} />);
     
     await waitFor(() => {
-      expect(screen.getByText(/0.846/)).toBeInTheDocument();
+      // 0.846 appears in both the R² label and the expanded metrics grid
+      const matches = screen.getAllByText(/0.846/);
+      expect(matches.length).toBeGreaterThanOrEqual(1);
     });
   });
 
