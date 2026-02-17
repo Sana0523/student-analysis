@@ -12,6 +12,9 @@
 
 # testing
 /coverage
+htmlcov/
+.coverage
+.pytest_cache/
 
 # next.js
 /.next/
@@ -19,10 +22,12 @@
 
 # production
 /build
+dist/
 
 # misc
 .DS_Store
 *.pem
+Thumbs.db
 
 # debug
 npm-debug.log*
@@ -31,7 +36,9 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # env files (can opt-in for committing if needed)
-.env*
+.env
+.env.local
+.env*.local
 
 # vercel
 .vercel
@@ -39,3 +46,22 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Python
+ml-service/__pycache__/
+ml-service/venv/
+ml-service/.pytest_cache/
+
+# Model files (optional - include in repo or not)
+# ml-service/*.pkl
+ml-service/sample_student_report.pdf
+ml-service/test_report.pdf
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log

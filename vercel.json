@@ -1,0 +1,15 @@
+{
+  "buildCommand": "npm run build",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install",
+  "framework": "nextjs",
+  "regions": ["iad1"],
+  "env": {
+    "FLASK_ML_URL": "@flask_ml_url",
+    "JWT_SECRET": "@jwt_secret",
+    "DB_HOST": "@db_host",
+    "DB_USER": "@db_user",
+    "DB_PASSWORD": "@db_password",
+    "DB_NAME": "@db_name"
+  }
+}
