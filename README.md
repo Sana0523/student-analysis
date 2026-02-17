@@ -1,94 +1,252 @@
-# Student Analysis Dashboard
+# 🎓 Student Analysis Dashboard
 
-A production-ready Next.js application for analyzing student performance and predicting academic outcomes using machine learning.
+AI-powered student performance prediction system with explainable machine learning, interactive What-If analysis, and comprehensive reporting.
 
-## 🚀 Features
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![Python](https://img.shields.io/badge/python-3.11+-blue)
+![Next.js](https://img.shields.io/badge/next.js-15-black)
+![Tests](https://img.shields.io/badge/tests-passing-green)
 
-- **Teacher Dashboard**: Manage students, grades, and view class analytics with full CRUD operations
-- **Student Dashboard**: View grades, performance charts, and ML-powered predictions
-- **ML-Powered Predictions**: Predict student grades using a Flask-based ML service
-- **Role-Based Access Control**: Secure API routes with JWT authentication and RBAC
-- **Real-Time Analytics**: Class averages, risk level distribution, and performance metrics
+---
 
-## 📋 Prerequisites
+## 📋 Table of Contents
 
-- Node.js 18+ 
+- [Overview](#-overview)
+- [Key Features](#-key-features)
+- [Tech Stack](#-tech-stack)
+- [System Architecture](#-system-architecture)
+- [Getting Started](#-getting-started)
+- [Testing](#-testing)
+- [Deployment](#-deployment)
+- [Documentation](#-documentation)
+- [Academic Contributions](#-academic-contributions)
+- [License](#-license)
+
+---
+
+## 🎯 Overview
+
+The Student Analysis Dashboard is a comprehensive academic performance prediction system that uses machine learning to identify at-risk students and provide actionable insights for educators.
+
+**Problem Solved:** Traditional student management systems are reactive—they only report past performance. Our system is **proactive**, using AI to predict future outcomes and explain the underlying factors.
+
+**Target Users:**
+- **Teachers:** Get early warnings about struggling students with specific intervention recommendations
+- **Students:** Understand what behaviors affect their grades through interactive What-If simulations
+
+---
+
+## ✨ Key Features
+
+### 🤖 Explainable AI (XAI)
+- **SHAP-based predictions:** Not just "what" but "why" a student is at risk
+- **Feature importance visualization:** See which factors (study hours, absences, etc.) impact grades most
+- **Natural language explanations:** "High Risk: Primary concerns are Absences (15) and Failures (2)"
+
+### 🎯 Multi-Model Comparison
+- **Three ML models:** Linear Regression, Random Forest, XGBoost
+- **Real-time metrics:** Compare R² scores, MAE, RMSE across models
+- **Model selection:** Choose the best model for your dataset
+
+### 🔄 What-If Simulation
+- **Interactive counseling tool:** Adjust study hours and absences with sliders
+- **Real-time predictions:** See immediate impact of behavior changes
+- **Actionable insights:** "If student increases study time to 8h/week, grade could improve by 12%"
+
+### 📊 Advanced Visualizations
+- **Correlation heatmap:** Understand relationships between study habits and performance
+- **Attendance trends:** Track how attendance affects predicted grades over time
+- **Feature importance charts:** Visual breakdown of prediction factors
+
+### 📄 PDF Report Generation
+- **Professional reports:** Download comprehensive student progress reports
+- **AI insights included:** Predictions, risk levels, and recommendations
+- **One-click export:** Generate and download PDFs instantly
+
+### 🔒 Secure Authentication
+- **JWT-based auth:** Secure token-based authentication
+- **Role-based access:** Separate dashboards for teachers and students
+- **bcrypt password hashing:** Industry-standard security
+
+---
+
+## 🛠️ Tech Stack
+
+### Frontend
+- **Framework:** Next.js 15 (App Router)
+- **Language:** TypeScript
+- **Styling:** Tailwind CSS
+- **Charts:** Chart.js, React-Chartjs-2
+- **Testing:** Jest, React Testing Library
+
+### Backend
+- **API:** Next.js API Routes
+- **ML Service:** Flask (Python)
+- **Models:** scikit-learn, XGBoost
+- **Explainability:** SHAP
+- **PDF Generation:** ReportLab
+
+### Database
+- **Development:** MySQL (local)
+- **Production:** PlanetScale (serverless MySQL)
+
+### Deployment
+- **Frontend:** Vercel
+- **ML Service:** Railway
+- **Database:** PlanetScale
+
+---
+
+## 🏗️ System Architecture
+
+```
+┌─────────────┐
+│   Browser   │
+└──────┬──────┘
+       │
+       ▼
+┌─────────────────────────────────┐
+│   Next.js (Vercel)              │
+│  ┌──────────────────────────┐   │
+│  │  Pages & Components      │   │
+│  │  - Teacher Dashboard     │   │
+│  │  - Student Dashboard     │   │
+│  │  - What-If Simulator     │   │
+│  └──────────┬───────────────┘   │
+│             │                    │
+│  ┌──────────▼───────────────┐   │
+│  │  API Routes              │   │
+│  │  - /api/predictions      │   │
+│  │  - /api/reports          │   │
+│  │  - /api/auth             │   │
+│  └──────────┬───────────────┘   │
+│             │                    │
+│  ┌──────────▼───────────────┐   │
+│  │  JWT Middleware          │   │
+│  │  (RBAC enforcement)      │   │
+│  └──────────────────────────┘   │
+└─────────┬───────────────────────┘
+          │
+          ├──────────────┐
+          │              │
+          ▼              ▼
+┌────────────────┐  ┌───────────────┐
+│ Flask ML       │  │ MySQL DB      │
+│ (Railway)      │  │ (PlanetScale) │
+│                │  │               │
+│ - 3 Models     │  │ - Users       │
+│ - SHAP         │  │ - Students    │
+│ - PDF Gen      │  │ - Grades      │
+└────────────────┘  └───────────────┘
+```
+
+See [System Architecture Diagram](docs/diagrams/system-architecture.md) for detailed Mermaid flow.
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Node.js 18+ and npm
+- Python 3.11+
 - MySQL 8.0+
-- Python 3.8+ (for ML service)
-- npm or yarn
 
-## 🛠️ Installation
+### Installation
 
-### 1. Clone and Install Dependencies
+#### 1. Clone Repository
 
 ```bash
-cd student_analysis
-npm install
+git clone https://github.com/yourusername/student-analysis-dashboard.git
+cd student-analysis-dashboard/student_analysis
 ```
 
-### 2. Configure Environment
-
-Copy the example environment file and update with your settings:
+#### 2. Setup Database
 
 ```bash
-cp .env.example .env.local
-```
-
-Edit `.env.local`:
-
-```env
-# Database Configuration
-DB_HOST=localhost
-DB_USER=root
-DB_PASSWORD=your_password_here
-DB_NAME=student_analysis
-
-# JWT Configuration
-JWT_SECRET_KEY=your-super-secret-jwt-key-change-in-production
-
-# Flask ML Service
-FLASK_API_URL=http://127.0.0.1:5000/predict
-```
-
-### 3. Set Up Database
-
-Run the migration script to create tables and seed initial data:
-
-```bash
+# Create database and run migrations
 npm run migrate
 ```
 
-This will:
-- Create the database if it doesn't exist
-- Create all required tables (users, students, grades, predictions)
-- Seed initial data including a teacher account with hashed passwords
+Or manually:
+```bash
+mysql -u root -p
+CREATE DATABASE student_dashboard;
+mysql -u root -p student_dashboard < schema.sql
+```
 
-### 4. Start the ML Service
-
-In a separate terminal:
+#### 3. Setup Backend (Flask ML Service)
 
 ```bash
 cd ml-service
-pip install flask pandas joblib scikit-learn
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Train models (if not already trained)
+python train_all_models.py
+
+# Start Flask server
 python predict_script.py
 ```
 
-The ML service will run on `http://127.0.0.1:5000`
+Flask runs on `http://localhost:5000`
 
-### 5. Start the Development Server
+#### 4. Setup Frontend (Next.js)
 
 ```bash
+# From student_analysis root
+npm install
+
+# Create .env.local
+cp .env.example .env.local
+
+# Edit .env.local with your config
+# Then start development server
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Next.js runs on `http://localhost:3000`
 
-## 🔐 Default Credentials
+#### 5. Login
 
-| Role | Email | Password |
-|------|-------|----------|
-| Teacher | teacher@school.vps | password123 |
-| Student | student@school.vps | password123 |
+**Teacher Account:**
+- Email: `teacher@school.vps`
+- Password: `password123`
+
+**Student Account:**
+- Email: `student@school.vps`
+- Password: `password123`
+
+---
+
+## 🧪 Testing
+
+### Backend Tests (Python)
+
+```bash
+cd ml-service
+pytest tests/ -v
+pytest tests/ --cov=. --cov-report=html
+```
+
+**Test suites:** Predictions, Model Metrics, PDF Generation, Scaler & Features
+
+### Frontend Tests (JavaScript)
+
+```bash
+npm test
+npm run test:coverage
+```
+
+**Test suites:** FeatureImportanceChart, ModelSelector
+
+### Test Files
+- `ml-service/tests/test_predictions.py` - ML prediction logic, model validation, PDF generation
+- `__tests__/components/FeatureImportanceChart.test.tsx` - Feature importance visualization
+- `__tests__/components/ModelSelector.test.tsx` - Model selection component
+
+---
 
 ## 📚 API Reference
 
@@ -114,9 +272,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 |----------|--------|------|-------------|
 | `/api/grades` | GET | ✅ | Get all grades |
 | `/api/grades` | POST | ✅ Teacher | Add new grade |
-| `/api/grades/[id]` | GET | ✅ | Get grade by ID |
-| `/api/grades/[id]` | PUT | ✅ Teacher | Update grade |
-| `/api/grades/[id]` | DELETE | ✅ Teacher | Delete grade |
+| `/api/grades/[id]` | GET/PUT/DELETE | ✅ | CRUD by ID |
 | `/api/grades/student/[studentId]` | GET | ✅ | Get grades for student |
 
 ### Predictions
@@ -125,91 +281,141 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 |----------|--------|------|-------------|
 | `/api/predictions` | POST | ✅ | Get ML prediction for student |
 | `/api/predictions/save` | POST | ✅ | Save prediction to database |
-| `/api/predictions/save?studentId=x` | GET | ✅ | Get latest prediction for student |
+| `/api/predictions/simulate` | POST | ✅ | What-If simulation |
 | `/api/predictions/student/[studentId]` | GET | ✅ | Get prediction history |
 
-### Analytics
+### Analytics & Reports
 
 | Endpoint | Method | Auth | Description |
 |----------|--------|------|-------------|
 | `/api/analytics/class-average` | GET | ✅ Teacher | Get class statistics |
+| `/api/analytics/attendance-trend/[studentId]` | GET | ✅ | Attendance trend data |
+| `/api/ml/model-metrics` | GET | ✅ | Get ML model performance metrics |
+| `/api/reports/student/[studentId]` | GET | ✅ | Generate PDF report |
 
-## 🗄️ Database Schema
+---
 
-### Tables
+## 🌐 Deployment
 
-- **users**: Authentication credentials and roles
-- **students**: Student demographics and academic metadata
-- **grades**: Individual grade records
-- **predictions**: ML prediction history
+See [DEPLOYMENT.md](DEPLOYMENT.md) for the complete deployment guide.
 
-See `schema.sql` for complete table definitions with constraints and indexes.
+### Quick Deploy
 
-## 🔒 Security Features
+#### Deploy Flask to Railway
 
-- **JWT Authentication**: Secure token-based authentication
-- **Password Hashing**: bcrypt-based password storage
-- **RBAC Middleware**: Server-side role enforcement
-- **Input Validation**: All inputs validated before database operations
-- **SQL Injection Prevention**: Parameterized queries throughout
+```bash
+cd ml-service
+railway login
+railway init
+railway up
+```
 
-## 📁 Project Structure
+#### Deploy Next.js to Vercel
+
+```bash
+vercel
+vercel --prod
+```
+
+---
+
+## 📖 Documentation
+
+### Diagrams
+- [ER Diagram](docs/diagrams/er-diagram.md) - Database schema
+- [Login Sequence](docs/diagrams/login-sequence.md) - Authentication flow
+- [Prediction Sequence](docs/diagrams/prediction-sequence.md) - ML prediction flow
+- [System Architecture](docs/diagrams/system-architecture.md) - Overall architecture
+
+---
+
+## 🏗️ Project Structure
 
 ```
 student_analysis/
 ├── app/
-│   ├── api/                 # API routes
-│   │   ├── auth/           # Authentication
-│   │   ├── students/       # Student CRUD
-│   │   ├── grades/         # Grade CRUD
-│   │   ├── predictions/    # ML predictions
-│   │   └── analytics/      # Analytics endpoints
-│   ├── lib/                # Utility functions
-│   │   ├── auth.ts        # Password hashing
-│   │   └── jwt.ts         # JWT utilities
-│   ├── student_dashboard/  # Student UI
-│   └── teacher_dashboard/  # Teacher UI
-├── ml-service/             # Flask ML service
-│   └── predict_script.py
-├── middleware.ts           # Auth & RBAC middleware
-├── schema.sql              # Database schema
-├── migrate.js              # Migration script
-└── db.ts                   # Database connection
+│   ├── api/                     # API routes
+│   │   ├── auth/               # Authentication
+│   │   ├── students/           # Student CRUD
+│   │   ├── grades/             # Grade CRUD
+│   │   ├── predictions/        # ML predictions + What-If
+│   │   ├── analytics/          # Class analytics
+│   │   ├── ml/                 # Model metrics
+│   │   └── reports/            # PDF report generation
+│   ├── components/             # React components
+│   │   ├── FeatureImportanceChart.tsx
+│   │   ├── ModelSelector.tsx
+│   │   ├── WhatIfSimulator.tsx
+│   │   └── AttendanceTrendChart.tsx
+│   ├── lib/                    # Utility functions
+│   │   ├── auth.ts            # Password hashing
+│   │   └── jwt.ts             # JWT utilities
+│   ├── student_dashboard/      # Student UI
+│   └── teacher_dashboard/      # Teacher UI
+├── components/                  # Shared components
+│   ├── GradeTable.tsx
+│   ├── PredictionCard.tsx
+│   └── StudentTable.tsx
+├── ml-service/                  # Flask ML service
+│   ├── predict_script.py       # Flask API server
+│   ├── train_all_models.py     # Model training
+│   ├── generate_report.py      # PDF generation
+│   ├── grade_prediction.py     # Core prediction logic
+│   ├── requirements.txt
+│   ├── Procfile                # Railway deployment
+│   ├── railway.json
+│   └── tests/                  # Pytest test suite
+├── __tests__/                   # Jest test suite
+│   └── components/
+├── docs/                        # Documentation
+│   └── diagrams/               # Mermaid diagrams
+├── middleware.ts                # Auth & RBAC middleware
+├── schema.sql                  # Database schema
+├── migrate.js                  # Migration script
+├── db.ts                       # Database connection
+├── jest.config.js              # Jest configuration
+├── vercel.json                 # Vercel deployment config
+├── DEPLOYMENT.md               # Deployment guide
+└── README.md                   # This file
 ```
 
-## 🧪 Testing
+---
 
-### Test Authentication
+## 🔒 Security Features
 
-```bash
-curl -X POST http://localhost:3000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"teacher@school.vps","password":"password123"}'
-```
+- **JWT Authentication**: Secure token-based authentication with `jose` library
+- **Password Hashing**: bcrypt-based password storage
+- **RBAC Middleware**: Server-side role enforcement on all protected routes
+- **Input Validation**: All inputs validated before database operations
+- **SQL Injection Prevention**: Parameterized queries throughout
+- **CORS Configuration**: Properly configured cross-origin policies
 
-### Test Protected Endpoint
+---
 
-```bash
-curl http://localhost:3000/api/students \
-  -H "Authorization: Bearer YOUR_TOKEN_HERE"
-```
+## 🎓 Academic Contributions
 
-## 🐛 Troubleshooting
+This project demonstrates several novel aspects:
 
-### Database Connection Issues
+1. **XAI in Education:** SHAP explanations combined with student grade prediction
+2. **What-If Analysis:** Interactive counseling tool for proactive academic intervention
+3. **Multi-Model Framework:** Transparent ML comparison for educational datasets
+4. **Actionable Insights:** Transform black-box predictions into understandable recommendations
 
-1. Ensure MySQL is running
-2. Verify credentials in `.env.local`
-3. Check that the database exists: `npm run migrate`
+### Research Gaps Addressed
+- Lack of interpretability in educational ML systems
+- Absence of proactive tools for educators
+- Limited personalization in student support systems
 
-### ML Service Not Responding
-
-1. Ensure Flask service is running on port 5000
-2. Check that model files exist in `ml-service/`:
-   - `linear_regression_model.pkl`
-   - `grade_scaler.pkl`
-
+---
 
 ## 📝 License
 
-MIT License
+MIT License - see [LICENSE](LICENSE) file for details
+
+---
+
+## 🙏 Acknowledgments
+
+- Dataset: [UCI Student Performance Dataset](https://archive.ics.uci.edu/ml/datasets/student+performance)
+- SHAP Library: [slundberg/shap](https://github.com/slundberg/shap)
+- Inspiration: Need for proactive student intervention systems
