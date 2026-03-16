@@ -1,7 +1,7 @@
 "use client";
-import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+
 export default function Home() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -47,65 +47,68 @@ export default function Home() {
     }
   };
   return (
-    <div className="background">
-      <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-        <div className="text-2xl font-bold text-center text-black">
-          Student Analysis Dashboard
-        </div>
-        
-        <form onSubmit={handleSubmit} className="Login-form">
-          <h2 className="text-2xl font-semibold text-center text-gray-800 mb-6">
-            Login
-          </h2>
-          
+    <main className="login-shell">
+      <div className="login-orb login-orb-left" aria-hidden="true" />
+      <div className="login-orb login-orb-right" aria-hidden="true" />
+
+      <section className="login-panel">
+        <aside className="login-brand">
+          <p className="login-kicker">Academic Intelligence</p>
+          <h1>Student Analysis Dashboard</h1>
+          <p>
+            Monitor performance trends, compare cohorts, and use predictive insights
+            to support better learning outcomes.
+          </p>
+          <div className="login-meta">
+            <span>Secure Access</span>
+            <span>Teacher and Student Roles</span>
+            <span>Live Analytics</span>
+          </div>
+        </aside>
+
+        <form onSubmit={handleSubmit} className="login-card" noValidate>
+          <div className="login-card-header">
+            <h2>Welcome back</h2>
+            <p>Sign in to continue to your dashboard.</p>
+          </div>
+
           {error && (
-            <div className="mb-4 text-sm text-red-600 bg-red-100 p-3 rounded-md">
+            <div className="login-error" role="alert">
               {error}
             </div>
           )}
 
-          <div className="mb-4">
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email</label>
+          <div className="login-field">
+            <label htmlFor="email">Email</label>
             <input
               id="email"
               type="email"
-              placeholder="Enter your email"
+              placeholder="name@school.edu"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-gray-300 p-3 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               required
             />
           </div>
-          
-          <div className="mb-6">
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700">Password</label>
+
+          <div className="login-field">
+            <label htmlFor="password">Password</label>
             <input
               id="password"
               type="password"
               placeholder="Enter your password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-gray-300 p-3 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               required
             />
           </div>
-          
-          <button
-            type="submit"
-            className="w-18 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-          >
-            Login
-          </button>
-          
-          <p className="text-center text-sm text-gray-500 mt-4">
-            Don't have an account? <a href="#" className="text-blue-600 hover:underline">Sign up</a>
-          </p>
-        </form>
 
-        <footer className="mt-8 text-sm text-gray-500">
-          © 2023 Student Analysis. All rights reserved.
-        </footer>
-      </div>
-    </div>
+          <button type="submit" className="login-button" disabled={loading}>
+            {loading ? "Signing in..." : "Sign in"}
+          </button>
+
+          <p className="login-footer">Protected by role-based authentication</p>
+        </form>
+      </section>
+    </main>
   );
 }
