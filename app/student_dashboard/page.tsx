@@ -28,6 +28,8 @@ type Prediction = {
   risk_level: string;
 };
 
+const GRADE_MAX_MARKS = 20;
+
 const toNumber = (value: unknown, fallback = 0): number => {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : fallback;
@@ -39,6 +41,9 @@ const toCleanScore = (value: unknown): number => {
   }
   return toNumber(value, 0);
 };
+
+const toPercentage = (score: number, maxMarks: number = GRADE_MAX_MARKS): number =>
+  (score / maxMarks) * 100;
 
 const StudentDashboard = () => {
   
@@ -181,7 +186,7 @@ const StudentDashboard = () => {
     datasets: [
       {
         label: 'Subject Scores',
-        data: grades.map(g => g.score),
+        data: grades.map(g => toPercentage(g.score)),
         backgroundColor: 'rgba(59, 130, 246, 0.5)',
         borderColor: 'rgba(59, 130, 246, 1)',
         borderWidth: 1,
@@ -288,6 +293,7 @@ const StudentDashboard = () => {
 
           <div className="lg:col-span-2 bg-gray-800 rounded-xl p-6">
              <h3 className="text-xl font-semibold mb-4">Grade Distribution</h3>
+             <p className="text-sm text-gray-400 mb-4">Scores are stored on a 0-20 scale and shown here as percentages.</p>
              <div className="h-80 mb-6">
                 {grades.length > 0 ? (
                     <Bar options={chartOptions} data={chartData} />
@@ -309,7 +315,7 @@ const StudentDashboard = () => {
                         {grades.map((grade, index) => (
                             <tr key={index} className="border-b border-gray-700 hover:bg-gray-600">
                                 <td className="px-6 py-4 font-medium">{grade.subject}</td>
-                                <td className="px-6 py-4">{grade.score}%</td>
+                                <td className="px-6 py-4">{grade.score.toFixed(1)} / 20 ({toPercentage(grade.score).toFixed(1)}%)</td>
                                 <td className="px-6 py-4">{grade.grade}</td>
                             </tr>
                         ))}

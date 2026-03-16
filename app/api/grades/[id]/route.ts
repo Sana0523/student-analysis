@@ -10,6 +10,8 @@ import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 
+const DEFAULT_MAX_MARKS = 20;
+
 interface GradeRow extends RowDataPacket {
   id: number;
   student_id: string;
@@ -23,7 +25,7 @@ interface GradeRow extends RowDataPacket {
 /**
  * Calculate letter grade from score
  */
-function calculateLetterGrade(score: number, maxMarks: number = 100): string {
+function calculateLetterGrade(score: number, maxMarks: number = DEFAULT_MAX_MARKS): string {
   const percentage = (score / maxMarks) * 100;
   if (percentage >= 90) return 'A+';
   if (percentage >= 85) return 'A';
@@ -90,6 +92,8 @@ export async function PUT(
     const { id } = await params;
     const body = await request.json();
     let { subject, score, max_marks, grade } = body;
+    const numericScore = score !== undefined ? Number(score) : undefined;
+    const numericMaxMarks = max_marks !== undefined ? Number(max_marks) : undefined;
 
     // Check if grade exists
     const [existing] = await db.query<GradeRow[]>(
@@ -105,17 +109,17 @@ export async function PUT(
     }
 
     // Validate score doesn't exceed max_marks
-    const effectiveMaxMarks = max_marks ?? existing[0].max_marks;
-    if (score !== undefined && score > effectiveMaxMarks) {
+    const effectiveMaxMarks = numericMaxMarks ?? Number(existing[0].max_marks ?? DEFAULT_MAX_MARKS);
+    if (numericScore !== undefined && (Number.isNaN(numericScore) || numericScore < 0 || numericScore > effectiveMaxMarks)) {
       return NextResponse.json(
-        { success: false, message: `Score (${score}) cannot exceed max marks (${effectiveMaxMarks})` },
+        { success: false, message: `Score must be between 0 and ${effectiveMaxMarks}.` },
         { status: 400 }
       );
     }
 
     // Auto-calculate letter grade if score is provided and grade is not
-    if (score !== undefined && grade === undefined) {
-      grade = calculateLetterGrade(score, effectiveMaxMarks);
+    if (numericScore !== undefined && grade === undefined) {
+      grade = calculateLetterGrade(numericScore, effectiveMaxMarks);
     }
 
     // Build update query dynamically
@@ -123,8 +127,8 @@ export async function PUT(
     const values: (string | number)[] = [];
 
     if (subject !== undefined) { updates.push('subject = ?'); values.push(subject); }
-    if (score !== undefined) { updates.push('score = ?'); values.push(score); }
-    if (max_marks !== undefined) { updates.push('max_marks = ?'); values.push(max_marks); }
+    if (numericScore !== undefined) { updates.push('score = ?'); values.push(numericScore); }
+    if (numericMaxMarks !== undefined) { updates.push('max_marks = ?'); values.push(numericMaxMarks); }
     if (grade !== undefined) { updates.push('grade = ?'); values.push(grade); }
 
     if (updates.length === 0) {

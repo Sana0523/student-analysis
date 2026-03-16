@@ -33,6 +33,10 @@ type EditGradeModal = { open: boolean; grade: Grade | null; };
 type DeleteModal = { open: boolean; type: 'student' | 'grade'; id: string; name: string; };
 
 const subjects = ["Math", "Science", "English", "History", "Art", "Physical Education", "Computer Science"];
+const GRADE_MAX_MARKS = 20;
+
+const toPercentage = (score: number, maxMarks: number = GRADE_MAX_MARKS) =>
+  (Number(score) / maxMarks) * 100;
 
 const TeacherDashboard = () => {
   const router = useRouter();
@@ -153,13 +157,75 @@ const TeacherDashboard = () => {
       const res = await fetch('/api/grades', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify(newGrade),
+        body: JSON.stringify({
+          studentId: newGrade.student_id,
+          subject: newGrade.subject,
+          score: newGrade.score,
+        }),
       });
       if (!res.ok) throw new Error('Failed to add grade');
       setNotification({ type: 'success', message: 'Grade added!' });
       fetchData();
       setActiveTab('grades');
     } catch (err: any) { setNotification({ type: 'error', message: err.message }); }
+  };
+
+  const handleUpdateStudent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingStudent) return;
+
+    const token = localStorage.getItem('accessToken');
+    try {
+      const res = await fetch(`/api/students/${editingStudent.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({
+          name: editingStudent.name,
+          email: editingStudent.email,
+          age: Number(editingStudent.age),
+          study_hours: Number(editingStudent.study_hours),
+          failures: Number(editingStudent.failures ?? 0),
+          absences: Number(editingStudent.absences ?? 0),
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data?.success) throw new Error(data?.message || 'Failed to update student');
+
+      setNotification({ type: 'success', message: 'Student updated successfully!' });
+      setEditStudentModal({ open: false, student: null });
+      setEditingStudent(null);
+      fetchData();
+    } catch (err: any) {
+      setNotification({ type: 'error', message: err.message || 'Failed to update student' });
+    }
+  };
+
+  const handleUpdateGrade = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingGrade) return;
+
+    const token = localStorage.getItem('accessToken');
+    try {
+      const res = await fetch(`/api/grades/${editingGrade.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({
+          subject: editingGrade.subject,
+          score: Number(editingGrade.score),
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data?.success) throw new Error(data?.message || 'Failed to update grade');
+
+      setNotification({ type: 'success', message: 'Grade updated successfully!' });
+      setEditGradeModal({ open: false, grade: null });
+      setEditingGrade(null);
+      fetchData();
+    } catch (err: any) {
+      setNotification({ type: 'error', message: err.message || 'Failed to update grade' });
+    }
   };
 
   const handleDelete = async () => {
@@ -244,8 +310,8 @@ const TeacherDashboard = () => {
           </svg>
           <div>
             <p className="text-blue-200 text-sm">
-              <span className="font-semibold">Grade Scale Notice:</span> The system currently uses a 0-20 grading scale (Portuguese system). 
-              When adding grades, please enter values between 0-20. The displayed percentages are automatically converted for clarity.
+              <span className="font-semibold">Grade Scale Notice:</span> The system uses a 0-20 grading scale (Portuguese system).
+              Enter values between 0-20. Tables show the raw score and percentage equivalent for clarity.
             </p>
           </div>
         </div>
@@ -259,7 +325,7 @@ const TeacherDashboard = () => {
           <div className="bg-gray-800 p-6 rounded-lg text-center border border-gray-700">
             <h3 className="text-gray-400 text-sm font-medium uppercase tracking-wider">Class Average</h3>
             <p className="text-4xl font-bold mt-2 text-blue-400">
-                {grades.length > 0 ? `${classAverage.toFixed(1)}%` : 'N/A'}
+              {grades.length > 0 ? `${toPercentage(classAverage).toFixed(1)}%` : 'N/A'}
             </p>
           </div>
           <div className="bg-gray-800 p-6 rounded-lg text-center border border-gray-700">
@@ -339,7 +405,7 @@ const TeacherDashboard = () => {
                       <tr key={g.id} className="hover:bg-gray-750">
                         <td className="p-4">{student?.name || 'Unknown'}</td>
                         <td className="p-4">{g.subject}</td>
-                        <td className="p-4 font-semibold text-blue-300">{g.score}%</td>
+                        <td className="p-4 font-semibold text-blue-300">{Number(g.score).toFixed(1)} / 20 ({toPercentage(Number(g.score)).toFixed(1)}%)</td>
                         <td className="p-4">{g.grade || '-'}</td>
                         <td className="p-4 text-right">
                           <button onClick={() => openEditGradeModal(g)} className="text-blue-400 hover:underline mr-4">Edit</button>
@@ -386,7 +452,7 @@ const TeacherDashboard = () => {
                   {students.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                 </select>
                 <select value={newGrade.subject} onChange={e => setNewGrade({ ...newGrade, subject: e.target.value })} className="w-full bg-gray-700 p-3 rounded border border-gray-600" required>
-                  {subjects.map(s => <option key={s.key} value={s}>{s}</option>)}
+                  {subjects.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
                 <input type="number" placeholder="Score (0-20)" min="0" max="20" step="0.1" value={newGrade.score} onChange={e => setNewGrade({ ...newGrade, score: Number(e.target.value) })} className="w-full bg-gray-700 p-3 rounded border border-gray-600" required />
                 <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 p-3 rounded font-bold">Submit Grade</button>
@@ -406,6 +472,120 @@ const TeacherDashboard = () => {
               <button onClick={() => setDeleteModal({ ...deleteModal, open: false })} className="flex-1 bg-gray-700 py-3 rounded hover:bg-gray-600">Cancel</button>
               <button onClick={handleDelete} className="flex-1 bg-red-600 py-3 rounded hover:bg-red-700 font-bold">Delete</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- Edit Student Modal --- */}
+      {editStudentModal.open && editingStudent && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-800 p-6 rounded-lg w-full max-w-lg border border-gray-700 shadow-2xl">
+            <h2 className="text-2xl font-bold mb-6">Edit Student</h2>
+            <form onSubmit={handleUpdateStudent} className="space-y-4">
+              <input
+                type="text"
+                value={editingStudent.name}
+                onChange={(e) => setEditingStudent({ ...editingStudent, name: e.target.value })}
+                className="w-full bg-gray-700 p-3 rounded border border-gray-600"
+                required
+              />
+              <input
+                type="email"
+                value={editingStudent.email}
+                onChange={(e) => setEditingStudent({ ...editingStudent, email: e.target.value })}
+                className="w-full bg-gray-700 p-3 rounded border border-gray-600"
+                required
+              />
+              <div className="grid grid-cols-2 gap-4">
+                <input
+                  type="number"
+                  min="1"
+                  value={editingStudent.age}
+                  onChange={(e) => setEditingStudent({ ...editingStudent, age: Number(e.target.value) })}
+                  className="bg-gray-700 p-3 rounded border border-gray-600"
+                  required
+                />
+                <input
+                  type="number"
+                  min="0"
+                  value={editingStudent.study_hours}
+                  onChange={(e) => setEditingStudent({ ...editingStudent, study_hours: Number(e.target.value) })}
+                  className="bg-gray-700 p-3 rounded border border-gray-600"
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <input
+                  type="number"
+                  min="0"
+                  value={editingStudent.failures ?? 0}
+                  onChange={(e) => setEditingStudent({ ...editingStudent, failures: Number(e.target.value) })}
+                  className="bg-gray-700 p-3 rounded border border-gray-600"
+                />
+                <input
+                  type="number"
+                  min="0"
+                  value={editingStudent.absences ?? 0}
+                  onChange={(e) => setEditingStudent({ ...editingStudent, absences: Number(e.target.value) })}
+                  className="bg-gray-700 p-3 rounded border border-gray-600"
+                />
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => { setEditStudentModal({ open: false, student: null }); setEditingStudent(null); }}
+                  className="flex-1 bg-gray-700 py-3 rounded hover:bg-gray-600"
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="flex-1 bg-blue-600 py-3 rounded hover:bg-blue-700 font-semibold">
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* --- Edit Grade Modal --- */}
+      {editGradeModal.open && editingGrade && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-800 p-6 rounded-lg w-full max-w-md border border-gray-700 shadow-2xl">
+            <h2 className="text-2xl font-bold mb-6">Edit Grade</h2>
+            <form onSubmit={handleUpdateGrade} className="space-y-4">
+              <select
+                value={editingGrade.subject}
+                onChange={(e) => setEditingGrade({ ...editingGrade, subject: e.target.value })}
+                className="w-full bg-gray-700 p-3 rounded border border-gray-600"
+                required
+              >
+                {subjects.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+              <input
+                type="number"
+                min="0"
+                max="20"
+                step="0.1"
+                value={editingGrade.score}
+                onChange={(e) => setEditingGrade({ ...editingGrade, score: Number(e.target.value) })}
+                className="w-full bg-gray-700 p-3 rounded border border-gray-600"
+                required
+              />
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => { setEditGradeModal({ open: false, grade: null }); setEditingGrade(null); }}
+                  className="flex-1 bg-gray-700 py-3 rounded hover:bg-gray-600"
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="flex-1 bg-blue-600 py-3 rounded hover:bg-blue-700 font-semibold">
+                  Save Changes
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

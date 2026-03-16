@@ -1,18 +1,28 @@
 import { NextResponse } from 'next/server';
-import path from 'path';
 import {db} from '@/db';
 
-export async function GET() {
-    // console.log("Fetching grades from mock data...");
-    // // Explicitly log the path to help debug
-    // const mockDataPath = path.join(process.cwd(), 'lib', 'mockData.ts');
-    // console.log(`Looking for mockData at: ${mockDataPath}`);
+const DEFAULT_MAX_MARKS = 20;
 
-    // // Assuming the import is correct, this line should work
-    // return NextResponse.json({ success: true, grades });
+function calculateLetterGrade(score: number, maxMarks: number = DEFAULT_MAX_MARKS): string {
+  const percentage = (score / maxMarks) * 100;
+  if (percentage >= 90) return 'A+';
+  if (percentage >= 85) return 'A';
+  if (percentage >= 80) return 'A-';
+  if (percentage >= 75) return 'B+';
+  if (percentage >= 70) return 'B';
+  if (percentage >= 65) return 'B-';
+  if (percentage >= 60) return 'C+';
+  if (percentage >= 55) return 'C';
+  if (percentage >= 50) return 'C-';
+  if (percentage >= 45) return 'D+';
+  if (percentage >= 40) return 'D';
+  return 'F';
+}
+
+export async function GET() {
     try {
     const [rows] = await db.query(`
-      SELECT g.id, g.student_id, g.subject, g.score, g.grade 
+      SELECT g.id, g.student_id, g.subject, g.score, g.max_marks, g.grade 
       FROM grades g
     `);
     return NextResponse.json({ success: true, grades: rows }); 
@@ -24,24 +34,30 @@ export async function GET() {
 // Handles POST requests to add a new grade
 export async function POST(request: Request) {
   try {
-    const { studentId, subject, score } = await request.json();
+    const body = await request.json();
+    const studentId = body.studentId ?? body.student_id;
+    const subject = body.subject;
+    const numericScore = Number(body.score);
+    const maxMarks = Number(body.max_marks ?? DEFAULT_MAX_MARKS);
 
     // Basic validation
-    if (!studentId || !subject || typeof score === 'undefined') {
+    if (!studentId || !subject || Number.isNaN(numericScore)) {
       return NextResponse.json({ success: false, message: 'Missing required fields.' }, { status: 400 });
     }
 
-    // Determine the letter grade based on the score
-    let letterGrade = 'F';
-    if (score >= 90) letterGrade = 'A';
-    else if (score >= 80) letterGrade = 'B';
-    else if (score >= 70) letterGrade = 'C';
-    else if (score >= 60) letterGrade = 'D';
+    if (numericScore < 0 || numericScore > maxMarks) {
+      return NextResponse.json(
+        { success: false, message: `Score must be between 0 and ${maxMarks}.` },
+        { status: 400 }
+      );
+    }
+
+    const letterGrade = calculateLetterGrade(numericScore, maxMarks);
 
     // Insert the new grade into the database
-    const [result] = await db.query(
-      'INSERT INTO grades (student_id, subject, score, grade) VALUES (?, ?, ?, ?)',
-      [studentId, subject, score, letterGrade]
+    await db.query(
+      'INSERT INTO grades (student_id, subject, score, max_marks, grade) VALUES (?, ?, ?, ?, ?)',
+      [studentId, subject, numericScore, maxMarks, letterGrade]
     );
 
     // You can check result.insertId to confirm the insert
