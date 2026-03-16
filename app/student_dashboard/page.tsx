@@ -28,6 +28,18 @@ type Prediction = {
   risk_level: string;
 };
 
+const toNumber = (value: unknown, fallback = 0): number => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+const toCleanScore = (value: unknown): number => {
+  if (typeof value === "string") {
+    return toNumber(value.replace("%", "").trim(), 0);
+  }
+  return toNumber(value, 0);
+};
+
 const StudentDashboard = () => {
   
   const [studentData, setStudentData] = useState<Student | null>(null);
@@ -74,25 +86,31 @@ const StudentDashboard = () => {
       if (studentJson?.success) setStudentData(studentJson.student ?? studentJson);
 
       // Normalize grades response: accept either a raw array or { success: true, grades: [...] }
-      const parsedGrades: any[] = Array.isArray(gradesJson)
+      const parsedGradesRaw: any[] = Array.isArray(gradesJson)
         ? gradesJson
         : Array.isArray(gradesJson?.grades)
           ? gradesJson.grades
           : Array.isArray(gradesJson?.data)
             ? gradesJson.data
             : [];
+      const parsedGrades: Grade[] = parsedGradesRaw.map((g: any) => ({
+        subject: String(g?.subject ?? "Unknown"),
+        score: toCleanScore(g?.score),
+        grade: String(g?.grade ?? "N/A"),
+        date: String(g?.date ?? ""),
+      }));
       setGrades(parsedGrades);
  
       if (studentJson?.success) {
         try {
           const student = studentJson.student ?? studentJson;
           const requiredFeatures = {
-            age: student?.age ?? 0,
-            failures: student?.failures ?? 0,
-            studytime: student?.study_hours ?? 0,
-            absences: student?.absences ?? 0,
-            G1: parsedGrades?.[0]?.score ?? 0,
-            G2: parsedGrades?.[1]?.score ?? 0
+            age: toNumber(student?.age),
+            failures: toNumber(student?.failures),
+            studytime: toNumber(student?.study_hours),
+            absences: toNumber(student?.absences),
+            G1: toCleanScore(parsedGrades?.[0]?.score),
+            G2: toCleanScore(parsedGrades?.[1]?.score)
           };
 
           const maxMarks = 100;
