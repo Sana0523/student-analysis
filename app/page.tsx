@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { type FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function Home() {
@@ -9,7 +9,7 @@ export default function Home() {
   const [error, setError] = useState("");
   const router = useRouter();
 
-  const handleSubmit =async (e) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
 
